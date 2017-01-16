@@ -1,10 +1,21 @@
 """
 POC for parallelization
 """
+import ast
 import dill
 from functools import wraps
+import inspect
 from multiprocessing import Pool
 import os
+import math as mat
+
+class visitor(ast.NodeVisitor):
+    def generic_visit(self, node):
+        #print(type(node).__name__)
+        type_name = type(node).__name__
+        if type_name == "Name":
+            print(node.id)
+        ast.NodeVisitor.generic_visit(self, node)
 
 def num_tabs(line):
     num = 0
@@ -16,6 +27,13 @@ def num_tabs(line):
     return num
 
 def parallelize_for_loop(src, *args, **kwargs):
+    print("Was given this source code:", src)
+    print("Its variables are:")
+    # Compile the src code into a syntax tree so we can get all the vars
+    v = visitor()
+    tree = ast.parse(src)
+    v.visit(tree)
+
     # Scan for a for loop
     print("Found this source code to parallelize:", src)
     src = src.split(os.linesep)
@@ -36,6 +54,16 @@ def parallelize_for_loop(src, *args, **kwargs):
     # how best to parallelize the region, etc.
     # But for the POC, I just want to hard-code stuff to see if it
     # is possible.
+    # For example, for a simple loop parallelization,
+    # we would need to scan for all the variables in the src
+    # and make sure that they are all defined before the loop is
+    # executed. These variables would need to be passed as args
+    # to the task function (f in the following example),
+    # from the main function we call from here (paraloop in the
+    # example).
+    # If not all the variables can be resolved, it is because
+    # the src is not valid and we should raise a NameError or
+    # whatever for the variable that couldn't be resolved.
     new_src =  "from multiprocessing import Pool" + os.linesep
     new_src += "def f(x):" + os.linesep
     new_src += " " * 4 + "return x * x" + os.linesep
@@ -59,6 +87,7 @@ def acc():
 
 @acc()
 def square(ls):
+    y = mat.sqrt(5)
     sqrs = []
     for x in ls:
         sqrs.append(x * x)
