@@ -10,11 +10,13 @@ import os
 import math as mat
 
 class visitor(ast.NodeVisitor):
+    def __init__(self):
+        self.ids = []
+
     def generic_visit(self, node):
-        #print(type(node).__name__)
         type_name = type(node).__name__
         if type_name == "Name":
-            print(node.id)
+            self.ids.append(node.id)
         ast.NodeVisitor.generic_visit(self, node)
 
 def num_tabs(line):
@@ -27,15 +29,16 @@ def num_tabs(line):
     return num
 
 def parallelize_for_loop(src, *args, **kwargs):
-    print("Was given this source code:", src)
-    print("Its variables are:")
+    print("Was given this source code:", os.linesep + src)
     # Compile the src code into a syntax tree so we can get all the vars
     v = visitor()
     tree = ast.parse(src)
     v.visit(tree)
+    variables = set(v.ids)
+    print("Its variables are:")
+    print(variables)
 
     # Scan for a for loop
-    print("Found this source code to parallelize:", src)
     src = src.split(os.linesep)
     para_region = []
     found = False
@@ -49,6 +52,14 @@ def parallelize_for_loop(src, *args, **kwargs):
             start_tabs = num_tabs(line)
             found = True
     print("Found this loop: ", str(para_region))
+    print("As source code: " + os.linesep + os.linesep.join(para_region))
+    print("Just the task part: " +
+            os.linesep + os.linesep.join(para_region[1:]))
+    vis = visitor()
+    tree = ast.parse(os.linesep.join(para_region[1:]).lstrip())
+    vis.visit(tree)
+    variables = set(vis.ids)
+    print("Variables from the task:", variables)
     # Now would come the hard part, where we scan the src
     # and the para_region and see what variables are needed and
     # how best to parallelize the region, etc.
