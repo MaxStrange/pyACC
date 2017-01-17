@@ -30,6 +30,13 @@ def load_kernel_module(fname):
     os.remove(fname)
     return mod
 
+def get_functions_from_stackframe(frame, func_names):
+    """
+    Gets all the functions from the the stackframe that are in func_names.
+    """
+    print("Func_names: ", str(func_names))
+    return [""]
+
 
 def get_modules_from_stackframe(frame):
     """

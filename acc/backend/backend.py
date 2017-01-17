@@ -14,7 +14,7 @@ as what was provided to the original function.
 """
 import os
 
-def for_loop(src, task_src, arg_vars, imports):
+def for_loop(src, task_src, arg_vars, imports, functions_srcs):
     """
     POC function for parallelizing a for-loop into multiple on-host processes.
     Returns source code.
@@ -26,13 +26,23 @@ def for_loop(src, task_src, arg_vars, imports):
     print("Modules: ", os.linesep + str(imports))
     print("==============================")
 
-    # TODO: This is just a proof of concept right now - need to actually do this
+    # -----------This is all you need to figure out---------------------
+    modules = ""
+    task_signature = "x"
+    new_task_src = " " * 4 + "return x * x" + os.linesep
+    execute_signature = "ls"
+    execute_src = " " * 4 + "p = Pool(5)" + os.linesep
+    execute_src += " " * 4 + "return p.map(task, " + execute_signature + ")" +\
+            os.linesep
+    #-------------------------------------------------------------------
 
-    new_src =  "from multiprocessing import Pool" + os.linesep
-    new_src += "def f(x):" + os.linesep
-    new_src += " " * 4 + "return x * x" + os.linesep
-    new_src += "def execute(ls):" + os.linesep
-    new_src += " " * 4 + "p = Pool(5)" + os.linesep
-    new_src += " " * 4 + "return p.map(f, ls)" + os.linesep
+    new_src = "from multiprocessing import Pool" + os.linesep
+    new_src += modules + os.linesep
+    new_src += os.linesep.join(functions_srcs) + os.linesep
+    new_src += "def task(" + task_signature + "):" + os.linesep
+    new_src += new_task_src + os.linesep
+    new_src += "def execute(" + execute_signature + "):" + os.linesep
+    new_src += execute_src + os.linesep
 
     return new_src
+

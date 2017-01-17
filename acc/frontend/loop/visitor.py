@@ -12,6 +12,7 @@ class loop_visitor(ast.NodeVisitor):
     def __init__(self, source, atok):
         self.loop_code = ""
         self.loop_vars = ""
+        self.funcs = []
         self.source = source
         self.atok = atok
 
@@ -34,14 +35,15 @@ class loop_visitor(ast.NodeVisitor):
             ## TODO: Only get the most outer comprehension or loop
             ## Do this by checking each one's atok.get_text_range
             ## and making sure that none overlap.
-            #return
 
         elif type_name == "For":
             for_src = self.atok.get_text(node)
             ls_for_src = left_strip_src(for_src)
             self.loop_code = ls_for_src
             self.loop_vars = get_variables_from_source(ls_for_src)
-            return
+
+        elif type_name == "Call":
+            self.funcs.append(self.atok.get_text(node))
 
         ast.NodeVisitor.generic_visit(self, node)
 
