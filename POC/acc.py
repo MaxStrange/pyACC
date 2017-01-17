@@ -20,7 +20,7 @@ def acc():
             # Route to different functions based on the pragma
             # TODO: add pragma args to decorator
             # For now, just handle for loops
-            return frontend.parallelize_for_loop(g, source,
+            return frontend.parallelize_for_loop(source,
                                             signature, *args, **kwargs)
         return wrapper
     return decorate
