@@ -9,11 +9,9 @@ class loop_visitor(ast.NodeVisitor):
     """
     This class gets all the loops in a batch of source code.
     """
-    def __init__(self, source, atok):
+    def __init__(self, atok):
         self.loop_code = ""
         self.loop_vars = ""
-        self.funcs = []
-        self.source = source
         self.atok = atok
 
     def generic_visit(self, node):
@@ -41,9 +39,6 @@ class loop_visitor(ast.NodeVisitor):
             ls_for_src = left_strip_src(for_src)
             self.loop_code = ls_for_src
             self.loop_vars = get_variables_from_source(ls_for_src)
-
-        elif type_name == "Call":
-            self.funcs.append(self.atok.get_text(node))
 
         ast.NodeVisitor.generic_visit(self, node)
 

@@ -18,10 +18,11 @@ def acc():
             source = dill.source.getsource(func)
             signature = inspect.signature(func)
             stackframe = inspect.stack()[1]
+            fname = func.__name__
             # Route to different functions based on the pragma
             # TODO: add pragma args to decorator
             # For now, just handle for loops
-            return frontend.parallelize_for_loop(source, stackframe,
+            return frontend.parallelize_for_loop(fname, source, stackframe,
                                             signature, *args, **kwargs)
         return wrapper
     return decorate

@@ -5,6 +5,7 @@ from acc.backend import backend
 from acc.frontend.util.util import compile_kernel_module
 from acc.frontend.util.util import get_modules_from_stackframe
 from acc.frontend.util.util import get_functions_from_stackframe
+from acc.frontend.util.util import get_function_names_from_source
 from acc.frontend.util.util import load_kernel_module
 from acc.frontend.loop.visitor import loop_visitor
 import ast
@@ -12,7 +13,7 @@ import asttokens
 import os
 
 
-def parallelize_for_loop(source, stackframe, signature, *args, **kwargs):
+def parallelize_for_loop(fname, source, stackframe, signature, *args, **kwargs):
     """
     Parallelizes a for loop.
     This is just a proof of concept function to show the idea.
@@ -21,15 +22,14 @@ def parallelize_for_loop(source, stackframe, signature, *args, **kwargs):
     """
     atok = asttokens.ASTTokens(source, parse=True)
     tree = atok.tree
-    v = loop_visitor(source, atok)
+    v = loop_visitor(atok)
     v.visit(tree)
 
     task_source = v.loop_code
     task_vars = v.loop_vars
     signature_vars = signature.parameters
     module_vars = get_modules_from_stackframe(stackframe.frame)
-    # TODO
-    func_names = parse_names_from_function_contexts(v.funcs)
+    func_names = get_function_names_from_source(source, fname)
     funcs = get_functions_from_stackframe(stackframe.frame, func_names)
 
     new_source = backend.for_loop(src=source, task_src=task_source,

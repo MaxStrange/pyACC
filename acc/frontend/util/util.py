@@ -4,6 +4,7 @@ for the front end
 """
 import ast
 import asttokens
+import inspect
 import os
 import types
 
@@ -30,12 +31,47 @@ def load_kernel_module(fname):
     os.remove(fname)
     return mod
 
+
+def get_function_names_from_source(src, ignore):
+    """
+    Gets the function names of all the function calls in the source code.
+    Does not include "acc" or the name of the acc-decorated function.
+    """
+    atk = asttokens.ASTTokens(src, parse=True)
+    tree = atk.tree
+    v = _func_visitor(atk)
+    v.visit(tree)
+    func_names = set(v.func_names)
+    if "acc" in func_names:
+        func_names.remove("acc")
+    if ignore in func_names:
+        func_names.remove(ignore)
+    return list(func_names)
+
+
 def get_functions_from_stackframe(frame, func_names):
     """
     Gets all the functions from the the stackframe that are in func_names.
+    That is, gets the source code of the functions that exist in the stack
+    frame corresponding to the function names in func_names.
+    So if there is a function in func_names called 'square' and there is
+    a function defined in the frame as 'def square(x): return x * x',
+    this will return ['def square(x): return x * x'] (but with appropriate
+    indenting and new lines).
     """
     print("Func_names: ", str(func_names))
-    return [""]
+    items = []
+    for name, val in frame.f_globals.items():
+        if isinstance(val, types.FunctionType) and name in func_names:
+            items.append((name, val))
+    for name, val in frame.f_locals.items():
+        if isinstance(val, types.FunctionType) and name in func_names:
+            items.append((name, val))
+    items = set(items)
+
+    funcs = [tup[1] for tup in items]
+    func_sources = [inspect.getsource(f) for f in funcs]
+    return func_sources
 
 
 def get_modules_from_stackframe(frame):
@@ -87,6 +123,27 @@ def _num_spaces(line):
             break
     return num
 
+class _func_visitor(ast.NodeVisitor):
+    """
+    This class gets all the function names for the functions
+    that are called in a given batch of source code.
+    """
+    def __init__(self, atok):
+        self.atok = atok
+        self.func_names = []
+        self._found_call = False
+
+    def generic_visit(self, node):
+        type_name = type(node).__name__
+        if type_name == "Call":
+            self._found_call = True
+            #name = self.atok.get_text(node)
+            #self.func_names.append(name)
+        elif type_name == "Name" and self._found_call:
+            self._found_call = False
+            self.func_names.append(node.id)
+
+        ast.NodeVisitor.generic_visit(self, node)
 
 class _name_visitor(ast.NodeVisitor):
     """
@@ -103,4 +160,10 @@ class _name_visitor(ast.NodeVisitor):
             self.ids.append(node.id)
 
         ast.NodeVisitor.generic_visit(self, node)
+
+
+
+
+
+
 

@@ -24,6 +24,7 @@ def for_loop(src, task_src, arg_vars, imports, functions_srcs):
     print("Task: ", os.linesep + task_src)
     print("Args: ", os.linesep + str(arg_vars))
     print("Modules: ", os.linesep + str(imports))
+    print("Functions: ", str(functions_srcs))
     print("==============================")
 
     # -----------This is all you need to figure out---------------------
@@ -43,6 +44,8 @@ def for_loop(src, task_src, arg_vars, imports, functions_srcs):
     new_src += new_task_src + os.linesep
     new_src += "def execute(" + execute_signature + "):" + os.linesep
     new_src += execute_src + os.linesep
+
+    print("This is the source we are going to import: " + os.linesep + new_src)
 
     return new_src
 
