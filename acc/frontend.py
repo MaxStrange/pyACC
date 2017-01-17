@@ -22,7 +22,14 @@ def parallelize_for_loop(source, signature, *args, **kwargs):
     task_source = v.loop_code
     task_vars = v.loop_vars
     signature_vars = signature.parameters
-    module_vars = list(imports())
+
+    print("======================================")
+    print("Task source: ", os.linesep + task_source)
+    print("Task vars: ", os.linesep + str(task_vars))
+    print("Signature vars: ", os.linesep + str(signature_vars))
+    print("======================================")
+
+    #TODO: This doesn't do what you need: module_vars = list(imports())
     new_source = backend.for_loop(src=source, task_src=task_source,
             arg_vars=signature_vars, imports=module_vars)
     compile_kernel_module(new_source)
@@ -61,11 +68,8 @@ class _loop_visitor(ast.NodeVisitor):
 
         elif type_name == "For":
             for_src = self.atok.get_text(node)
-            self.loop_code = for_src
             ls_for_src = left_strip_src(for_src)
-            print("===============================")
-            print("ls_for_src: ", os.linesep + ls_for_src)
-            print("===============================")
+            self.loop_code = ls_for_src
             self.loop_vars = get_variables_from_source(ls_for_src)
             return
 
@@ -100,6 +104,7 @@ def get_variables_from_source(src):
     tree = atk.tree
     v = _name_visitor()
     v.visit(tree)
+    return v.ids
 
 class _name_visitor(ast.NodeVisitor):
     """
@@ -116,9 +121,6 @@ class _name_visitor(ast.NodeVisitor):
             self.ids.append(node.id)
 
         ast.NodeVisitor.generic_visit(self, node)
-
-
-
 
 
 
