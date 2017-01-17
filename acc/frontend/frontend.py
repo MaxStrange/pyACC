@@ -1,7 +1,10 @@
 """
 This is the front end's API.
 """
+from acc.backend import backend
+from acc.frontend.util.util import compile_kernel_module
 from acc.frontend.util.util import get_modules_from_stackframe
+from acc.frontend.util.util import load_kernel_module
 from acc.frontend.loop.visitor import loop_visitor
 import ast
 import asttokens
@@ -25,18 +28,12 @@ def parallelize_for_loop(source, stackframe, signature, *args, **kwargs):
     signature_vars = signature.parameters
     module_vars = get_modules_from_stackframe(stackframe.frame)
 
-    print("======================================")
-    print("Task source: ", os.linesep + task_source)
-    print("Task vars: ", os.linesep + str(task_vars))
-    print("Signature vars: ", os.linesep + str(signature_vars))
-    print("Module vars: ", os.linesep + str(module_vars))
-    print("======================================")
-
     new_source = backend.for_loop(src=source, task_src=task_source,
             arg_vars=signature_vars, imports=module_vars)
-    compile_kernel_module(new_source)
-    mod = load_kernel_module()
+    fname = compile_kernel_module(new_source)
+    mod = load_kernel_module(fname)
     return mod.execute(*args, **kwargs)
+
 
 
 

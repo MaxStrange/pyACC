@@ -8,6 +8,29 @@ import os
 import types
 
 
+
+def compile_kernel_module(src):
+    """
+    Writes the given source code into a file that can then be loaded
+    into the running Python program with a call to load_kernel_module.
+    Returns the name of the module.
+    """
+    fname = "para_region_name_mangle.py"
+    with open(fname, 'w') as f:
+        f.write(src)
+    return fname
+
+
+def load_kernel_module(fname):
+    """
+    Loads the given Python file into the running program as a module
+    and returns it.
+    """
+    mod = __import__(fname[:-3])
+    os.remove(fname)
+    return mod
+
+
 def get_modules_from_stackframe(frame):
     """
     Takes a frame object and returns a list of aliases and
