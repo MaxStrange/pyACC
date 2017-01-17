@@ -2,7 +2,7 @@
 The main accelerator decorator.
 """
 import dill
-import frontend
+import acc.frontend.frontend as frontend
 from functools import wraps
 import inspect
 
@@ -17,10 +17,11 @@ def acc():
         def wrapper(*args, **kwargs):
             source = dill.source.getsource(func)
             signature = inspect.signature(func)
+            stackframe = inspect.stack()[1]
             # Route to different functions based on the pragma
             # TODO: add pragma args to decorator
             # For now, just handle for loops
-            return frontend.parallelize_for_loop(source,
+            return frontend.parallelize_for_loop(source, stackframe,
                                             signature, *args, **kwargs)
         return wrapper
     return decorate

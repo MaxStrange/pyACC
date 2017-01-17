@@ -8,8 +8,8 @@ The idea is that you can use Python metaprogramming to accomplish the same
 thing as OpenACC compiler directives. E.g.:
 
 ```python
-@acc(p_or_k='parallel', loop=True, copyout="ret[0:len(ret)]")
+@acc(p_or_k='parallel', loop=True, copyout="ret[0:len(data)]")
 def dosomething(data, ret):
     for d in data:
         ret.append(d ** 2)
-``` 
+```

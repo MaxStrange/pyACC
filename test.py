@@ -1,5 +1,4 @@
-from acc import acc
-
+from acc.api import acc
 import math as mat
 import tensorflow as tf
 import os
