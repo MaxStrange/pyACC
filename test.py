@@ -1,9 +1,12 @@
-from acc.api import acc
+from acc.api import acc, load_back_end
 import math as mat
 from tensorflow.python.ops import rnn, rnn_cell
 import tensorflow as tf
 import os
 from tqdm import tqdm
+
+load_back_end("default")
+
 
 def a_local_function(some_args):
     print("Does nothing")
