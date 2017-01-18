@@ -1,18 +1,19 @@
 """
-The main accelerator decorator.
+The main accelerator decorator and load_back_end function.
+
+These two functions are the only API functions from an end-user's perspective.
 """
 import dill
 import acc.frontend.frontend as frontend
 from functools import wraps
 import inspect
 
+# The back end
 back = None
 
 def acc():
     """
     The main accelerator decorator.
-    This is the only API function for the whole framework from
-    an end-user's perspective.
     """
     def decorate(func):
         @wraps(func)
@@ -40,7 +41,17 @@ def load_back_end(back_end="default"):
     it will use the default back end.
     """
     if back_end == "default":
-        back_end = "defaultbackend"
+        back_end = "acc.backend.backend"
 
+    # Set the back end to whatever is the last item in a string of x.y.z...
     global back
     back = __import__(back_end)
+    components = back_end.split('.')
+    for comp in components[1:]:
+        back = getattr(back, comp)
+
+
+
+
+
+
