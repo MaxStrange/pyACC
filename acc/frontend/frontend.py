@@ -34,10 +34,8 @@ def parallelize_for_loop(meta_data, back_end, *args, **kwargs):
 
     print(str(meta_data))
 
-    funcs = meta_data.funcs_funcs.extend(meta_data.callers_funcs)
-    funcs = [] if not funcs else funcs
-    module_vars = meta_data.callers_mods.extend(meta_data.funcs_mods)
-    module_vars = [] if not module_vars else module_vars
+    funcs = meta_data.funcs_funcs + meta_data.callers_funcs
+    module_vars = meta_data.funcs_mods + meta_data.callers_mods
 
     new_source = back_end.for_loop(src=meta_data.src, task_src=task_source,
             task_vars=task_vars, arg_vars=meta_data.signature.parameters,

@@ -54,8 +54,21 @@ def get_functions_from_module(module, func_names):
     Gets all the functions from the module that are in func_names.
     See @get_functions_from_stackframe.
     """
-    # TODO
-    return []
+    names_in_module_and_func_names =\
+            set([name for name in dir(module) if name in func_names])
+    funcs = [getattr(module, name) for name in names_in_module_and_func_names]
+    print("FUncs: ", str(funcs))
+    func_sources = []
+    for f in funcs:
+        try:
+            src = inspect.getsource(f)
+            func_sources.append(src)
+        except OSError:
+            # Source code not available, this must be a builtin or defined
+            # in another module, which will be taken care of by knowing which
+            # modules the new source file will need
+            pass
+    return func_sources
 
 
 def get_functions_from_stackframe(frame, func_names):
@@ -86,9 +99,13 @@ def get_modules_from_module(module):
     """
     Gets all the modules that the given one imports.
     """
-    # TODO
-    print("Source for module: ", os.linesep + inspect.getsource(module))
-    return []
+    global_var_names = set(dir(module))
+    items = [getattr(module, name) for name in global_var_names]
+    print("ITEMS: ", str(items))
+    items = [item for item in items if inspect.ismodule(item)]
+    # TODO: This currently just returns the modules, not tuples with
+    #       aliases and modules
+    return items
 
 
 def get_modules_from_stackframe(frame):
@@ -132,6 +149,9 @@ def left_strip_src(src):
 
 
 def _num_spaces(line):
+    """
+    How many spaces are there on the left of this line?
+    """
     num = 0
     for c in line:
         if c == " ":
@@ -139,6 +159,7 @@ def _num_spaces(line):
         else:
             break
     return num
+
 
 class _func_visitor(ast.NodeVisitor):
     """
@@ -161,6 +182,7 @@ class _func_visitor(ast.NodeVisitor):
             self.func_names.append(node.id)
 
         ast.NodeVisitor.generic_visit(self, node)
+
 
 class _name_visitor(ast.NodeVisitor):
     """
