@@ -97,14 +97,12 @@ def get_functions_from_stackframe(frame, func_names):
 
 def get_modules_from_module(module):
     """
-    Gets all the modules that the given one imports.
+    Gets all the modules that the given one imports in the form:
+    [('alias', 'module_object')...].
     """
     global_var_names = set(dir(module))
-    items = [getattr(module, name) for name in global_var_names]
-    print("ITEMS: ", str(items))
-    items = [item for item in items if inspect.ismodule(item)]
-    # TODO: This currently just returns the modules, not tuples with
-    #       aliases and modules
+    items = [(name, getattr(module, name)) for name in global_var_names]
+    items = [tup for tup in items if inspect.ismodule(tup[1])]
     return items
 
 
@@ -116,7 +114,7 @@ def get_modules_from_stackframe(frame):
     items = []
     for name, val in frame.f_globals.items():
         if isinstance(val, types.ModuleType):
-            items.append((name, val.__name__))
+            items.append((name, val))
     return items
 
 

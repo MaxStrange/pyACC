@@ -29,7 +29,7 @@ def for_loop(src, task_src, task_vars, arg_vars, imports, functions_srcs):
     print("==============================")
 
     # -----------This is all you need to figure out---------------------
-    modules = ""
+    modules = "" # You can get a module object's name by module.__name__
     task_signature = "x"
     new_task_src = " " * 4 + "return x * x" + os.linesep
     execute_signature = "ls"
