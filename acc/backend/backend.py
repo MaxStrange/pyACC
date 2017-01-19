@@ -14,7 +14,7 @@ as what was provided to the original function.
 """
 import os
 
-def for_loop(src, task_src, arg_vars, imports, functions_srcs):
+def for_loop(src, task_src, task_vars, arg_vars, imports, functions_srcs):
     """
     POC function for parallelizing a for-loop into multiple on-host processes.
     Returns source code.
@@ -22,6 +22,7 @@ def for_loop(src, task_src, arg_vars, imports, functions_srcs):
     print("==============================")
     print("Func: ", os.linesep + src)
     print("Task: ", os.linesep + task_src)
+    print("Task variables: ", os.linesep + str(task_vars))
     print("Args: ", os.linesep + str(arg_vars))
     print("Modules: ", os.linesep + str(imports))
     print("Functions: ", str(functions_srcs))

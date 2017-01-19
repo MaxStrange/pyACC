@@ -49,6 +49,15 @@ def get_function_names_from_source(src, ignore):
     return list(func_names)
 
 
+def get_functions_from_module(module, func_names):
+    """
+    Gets all the functions from the module that are in func_names.
+    See @get_functions_from_stackframe.
+    """
+    # TODO
+    return []
+
+
 def get_functions_from_stackframe(frame, func_names):
     """
     Gets all the functions from the the stackframe that are in func_names.
@@ -59,7 +68,6 @@ def get_functions_from_stackframe(frame, func_names):
     this will return ['def square(x): return x * x'] (but with appropriate
     indenting and new lines).
     """
-    print("Func_names: ", str(func_names))
     items = []
     for name, val in frame.f_globals.items():
         if isinstance(val, types.FunctionType) and name in func_names:
@@ -72,6 +80,15 @@ def get_functions_from_stackframe(frame, func_names):
     funcs = [tup[1] for tup in items]
     func_sources = [inspect.getsource(f) for f in funcs]
     return func_sources
+
+
+def get_modules_from_module(module):
+    """
+    Gets all the modules that the given one imports.
+    """
+    # TODO
+    print("Source for module: ", os.linesep + inspect.getsource(module))
+    return []
 
 
 def get_modules_from_stackframe(frame):
