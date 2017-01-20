@@ -67,6 +67,10 @@ def get_functions_from_module(module, func_names):
             # in another module, which will be taken care of by knowing which
             # modules the new source file will need
             pass
+        except TypeError:
+            # Seems that on previous Python versions, this is the error,
+            # rather than OSError
+            pass
     return func_sources
 
 
