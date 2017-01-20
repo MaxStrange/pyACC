@@ -57,7 +57,6 @@ def get_functions_from_module(module, func_names):
     names_in_module_and_func_names =\
             set([name for name in dir(module) if name in func_names])
     funcs = [getattr(module, name) for name in names_in_module_and_func_names]
-    print("FUncs: ", str(funcs))
     func_sources = []
     for f in funcs:
         try:

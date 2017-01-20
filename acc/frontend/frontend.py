@@ -32,8 +32,6 @@ def parallelize_for_loop(meta_data, back_end, *args, **kwargs):
             func_names)
     meta_data.funcs_mods = util.get_modules_from_module(meta_data.funcs_module)
 
-    print(str(meta_data))
-
     funcs = meta_data.funcs_funcs + meta_data.callers_funcs
     module_vars = meta_data.funcs_mods + meta_data.callers_mods
 

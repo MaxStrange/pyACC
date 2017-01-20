@@ -9,7 +9,7 @@ import math as mat
 def modules_local_function(nothing):
     print("This module is a hoax!")
 
-@acc()
+@acc(construct_or_directive="loop", clauses=[])
 def square(ls):
     modules_local_function(None)
     y = str(mat.sqrt(5)).join(["a", "b"])

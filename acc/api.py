@@ -13,7 +13,7 @@ import sys
 # The back end
 back = None
 
-def acc():
+def acc(*, construct_or_directive, clauses=[]):
     """
     The main accelerator decorator.
     NOTE: You cannot use global variables in the function that is decorated.
@@ -36,10 +36,40 @@ def acc():
             module = sys.modules[func.__module__]
             meta_data = MetaVars(src=source, stackframe=stackframe,
                     signature=signature, funcs_name=fname, funcs_module=module)
-            # Route to different functions based on the pragma
-            # TODO: add pragma args to decorator
-            # For now, just handle for loops
-            return frontend.parallelize_for_loop(meta_data, back, *args, **kwargs)
+
+            if construct_or_directive == "parallel":
+                pass
+            elif construct_or_directive == "kernels":
+                pass
+            elif construct_or_directive == "data":
+                pass
+            elif construct_or_directive == "host_data":
+                pass
+            elif construct_or_directive == "loop":
+                return frontend.parallelize_for_loop(meta_data, back, *args, **kwargs)
+            elif construct_or_directive == "atomic":
+                pass
+            elif construct_or_directive == "cache":
+                pass
+            elif construct_or_directive == "declare":
+                pass
+            elif construct_or_directive == "init":
+                pass
+            elif construct_or_directive == "shutdown":
+                pass
+            elif construct_or_directive == "set":
+                pass
+            elif construct_or_directive == "update":
+                pass
+            elif construct_or_directive == "wait":
+                pass
+            elif construct_or_directive == "enter data":
+                pass
+            elif construct_or_directive == "exit_data":
+                pass
+            else:
+                raise ValueError("Unrecognized construct or directive: ",
+                        construct_or_directive)
         return wrapper
     return decorate
 
