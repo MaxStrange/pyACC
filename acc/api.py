@@ -13,9 +13,13 @@ import sys
 # The back end
 back = None
 
-def acc(*, con_or_dir, clauses=[]):
+def acc(*, con_or_dir, clauses=None):
     """
     The main accelerator decorator.
+
+    Usage:
+    @acc(con_or_dir=<a construct or directive>, clauses=<a list of clauses>)
+
     NOTE: You cannot use global variables in the function that is decorated.
           The results are undefined if you do that, but it will likely result
           in a NameError. If you need to use a global, just pass it in to the
@@ -46,7 +50,8 @@ def acc(*, con_or_dir, clauses=[]):
             elif con_or_dir == "host_data":
                 pass
             elif con_or_dir == "loop":
-                return frontend.parallelize_for_loop(meta_data,
+                return frontend.parallelize_for_loop(clauses,
+                                                     meta_data,
                                                      back,
                                                      *args,
                                                      **kwargs)

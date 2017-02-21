@@ -11,13 +11,52 @@ import asttokens
 import os
 
 
-def parallelize_for_loop(meta_data, back_end, *args, **kwargs):
+def parallelize_for_loop(clauses, meta_data, back_end, *args, **kwargs):
     """
     Parallelizes a for loop.
+    ###################################################################
     This is just a proof of concept function to show the idea.
     This will only parallelize the first for loop in the
     given function.
+    ###################################################################
+    From the docs:
+    The loop construct can describe what type of parallelism to use to
+    execute the loop and declare private variables and arrays and reduction
+    operations.
+
+    Allowable clauses are:
+    - collapse( n )
+    - gang [( gang-arg-list )]
+    - worker [( [num:]int-expr )]
+    - vector [( [length:]int-expr )]
+    - seq
+    - auto
+    - tile( size-expr-list )
+    - device_type( device-type-list )
+    - independent
+    - private( var-list )
+    - reduction( operator:var-list)
+
+        Where gang-arg is one of:
+        - [num:]int-expr
+        - static:size-expr
+        and gang-arg-list may have at most one num and one static argument,
+        and where size-expr is one of:
+        - *
+        - int-expr
+
+    Restrictions:
+    - Only the collapse, gange, worker, vector, seq, auto and tile clauses may
+      follow a device_type clause.
+    - The int-expr argument to the worker and vector clauses must be
+      invariant in the kernels region.
+    - A loop associated with a loop construct that does not have a seq
+      clause must be written such that the loop iteration count is
+      computable when entering the loop construct.
     """
+    # TODO: first parse the clauses list (see the docs for the clauses'
+    #       descriptions associated with each directive or construct)
+
     atok = asttokens.ASTTokens(meta_data.src, parse=True)
     tree = atok.tree
     v = loop_visitor(atok)
