@@ -13,7 +13,7 @@ import sys
 # The back end
 back = None
 
-def acc(*, construct_or_directive, clauses=[]):
+def acc(*, con_or_dir, clauses=[]):
     """
     The main accelerator decorator.
     NOTE: You cannot use global variables in the function that is decorated.
@@ -37,39 +37,42 @@ def acc(*, construct_or_directive, clauses=[]):
             meta_data = MetaVars(src=source, stackframe=stackframe,
                     signature=signature, funcs_name=fname, funcs_module=module)
 
-            if construct_or_directive == "parallel":
+            if con_or_dir == "parallel":
                 pass
-            elif construct_or_directive == "kernels":
+            elif con_or_dir == "kernels":
                 pass
-            elif construct_or_directive == "data":
+            elif con_or_dir == "data":
                 pass
-            elif construct_or_directive == "host_data":
+            elif con_or_dir == "host_data":
                 pass
-            elif construct_or_directive == "loop":
-                return frontend.parallelize_for_loop(meta_data, back, *args, **kwargs)
-            elif construct_or_directive == "atomic":
+            elif con_or_dir == "loop":
+                return frontend.parallelize_for_loop(meta_data,
+                                                     back,
+                                                     *args,
+                                                     **kwargs)
+            elif con_or_dir == "atomic":
                 pass
-            elif construct_or_directive == "cache":
+            elif con_or_dir == "cache":
                 pass
-            elif construct_or_directive == "declare":
+            elif con_or_dir == "declare":
                 pass
-            elif construct_or_directive == "init":
+            elif con_or_dir == "init":
                 pass
-            elif construct_or_directive == "shutdown":
+            elif con_or_dir == "shutdown":
                 pass
-            elif construct_or_directive == "set":
+            elif con_or_dir == "set":
                 pass
-            elif construct_or_directive == "update":
+            elif con_or_dir == "update":
                 pass
-            elif construct_or_directive == "wait":
+            elif con_or_dir == "wait":
                 pass
-            elif construct_or_directive == "enter data":
+            elif con_or_dir == "enter data":
                 pass
-            elif construct_or_directive == "exit_data":
+            elif con_or_dir == "exit_data":
                 pass
             else:
                 raise ValueError("Unrecognized construct or directive: ",
-                        construct_or_directive)
+                        con_or_dir)
         return wrapper
     return decorate
 

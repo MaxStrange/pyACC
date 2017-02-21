@@ -10,7 +10,7 @@ The idea is that you can use Python metaprogramming to accomplish the same
 thing as OpenACC compiler directives. E.g.:
 
 ```python
-@acc(p_or_k='parallel', loop=True, copyout="ret[0:len(data)]")
+@acc(con_or_dir="parallel", clauses=["loop", "copyout=ret[0:len(data)]")
 def dosomething(data, ret):
     for d in data:
         ret.append(d ** 2)
@@ -26,4 +26,8 @@ to parallelize the decorated region.
 Obviously, pyACC would be significantly slower than OpenACC, but pyOpenCL or pyCUDA are also
 slower than their C/C++ counterparts. Blah blah blah speed/usability tradeoff blah blah.
 
-
+## Dependencies
+Just pip3 install the following:
+- asttokens
+- dill
+- tqdm (probably won't be necessary in the future)
