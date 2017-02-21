@@ -25,6 +25,45 @@ def acc(*, con_or_dir, clauses=None):
           in a NameError. If you need to use a global, just pass it in to the
           function. Python passes objects by reference anyway, so don't worry
           about the overhead.
+
+    TODO:
+    - Currently, every line of acc pragma needs to wrap a whole function, so
+      if you wanted to do this:
+
+      #pragma acc data copyin(a,b) copy(c)
+      #pragma acc kernels
+      #pragma acc loop independent
+      ---------code---------------
+
+      In pyACC, you would need to do this:
+
+      @acc(con_or_dir="data", clauses=["copyin(a,b)", "copy(c)"])
+      def a(blah):
+          b(blah)
+
+      @acc(con_or_dir="kernels", clauses=None)
+      def b(blah):
+          c(blah)
+
+      @acc(con_or_dir="loop", clauses=["independent"])
+      def c(blah):
+          ---------------code------------
+
+      Obviously, this is awful and needs improvement.
+      This is an easy fix though: Just do this:
+
+      @acc({"data": ["copyin(a,b)", "copy(c)],
+            "kernels": [],
+            "loop": ["independent"]})
+          -------------code-------------
+
+      For an even better user experience, it really should be a full parser,
+      so that you can do this:
+
+# TODO: Make this happen ###################################################
+      @acc("data copyin(a,b) copy(c); kernels; loop indepenedent")
+          -------------code-------------
+############################################################################
     """
     def decorate(func):
         @wraps(func)
