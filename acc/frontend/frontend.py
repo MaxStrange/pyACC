@@ -1,5 +1,8 @@
 """
 This is the front end's API.
+
+This module exposes all of the functions that should be used from the
+frontend by the acc module.
 """
 import acc.frontend.util.util as util
 from acc.frontend.loop.visitor import loop_visitor
