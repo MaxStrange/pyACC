@@ -130,9 +130,27 @@ def _loop(clauses, meta_data, back_end, *args, **kwargs):
 
     # TODO: parse the source into the intermediate representation used
     #       by the backend
-
-    # TODO: hand the intermediate representation off to the appropriate
-    #       function in the backend
+    # --->  The backend will need the following:
+    #       - meta variables (which it is NOT allowed to change)
+    #       - original source code of the decorated function
+    #           ---> packaged into a Code object which contains the
+    #                source and the context in which that source is running.
+    #                This context information should be appropriately updated
+    #                by the backend to match which lines are under which
+    #                context. That is, what region of the original source code
+    #                is under parallel context or kernels context?
+    #                It also needs the line number of the pragma the backend is
+    #                supposed to be working on.
+    #       - the function so far accumulated
+    #           ---> This function is a Code object that contains the so-far
+    #                modified function and the context in which different
+    #                regions of the code are being run. TODO not sure if we
+    #                need both this code and the above code to have the context
+    #                information.
+    #                It may also need some way of being easy for the backend to
+    #                figure out where it left off.
+    #       The backend will give back a Code object that is the so-far
+    #       accumulated function plus changes made due to the latest directive.
 
     atok = asttokens.ASTTokens(meta_data.src, parse=True)
     tree = atok.tree
