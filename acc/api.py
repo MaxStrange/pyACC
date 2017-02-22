@@ -5,7 +5,7 @@ These two functions are the only API functions from an end-user's perspective.
 """
 import acc.frontend.util.util as util
 import acc.frontend.frontend as frontend
-from acc.frontend.util.metavars import MetaVars
+from acc.ir.metavars import MetaVars
 import dill
 from functools import wraps
 import inspect
@@ -80,9 +80,4 @@ def load_back_end(back_end="default"):
     components = back_end.split('.')
     for comp in components[1:]:
         back = getattr(back, comp)
-
-
-
-
-
 

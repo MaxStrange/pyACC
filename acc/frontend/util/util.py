@@ -9,7 +9,6 @@ import os
 import types
 
 
-
 def compile_kernel_module(src):
     """
     Writes the given source code into a file that can then be loaded
@@ -200,10 +199,5 @@ class _name_visitor(ast.NodeVisitor):
             self.ids.append(node.id)
 
         ast.NodeVisitor.generic_visit(self, node)
-
-
-
-
-
 
 

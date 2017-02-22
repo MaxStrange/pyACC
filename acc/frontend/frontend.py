@@ -6,6 +6,7 @@ frontend by the acc module.
 """
 import acc.frontend.util.util as util
 from acc.frontend.loop.visitor import loop_visitor
+from acc.ir.intrep import Code
 import ast
 import asttokens
 import os
@@ -14,7 +15,7 @@ import re
 
 def parse_pragmas(meta_data, *args, **kwargs):
     """
-    Generator that yields pragmas one ata time from the function
+    Generator that yields pragmas one at a time from the function
     given in meta_data.
     """
     regexp = re.compile("^((\s)*#(\s)*(pragma)(\s)*(acc))")
@@ -64,7 +65,7 @@ def _apply_pragma_helper(directive,
         pass
     elif directive == "loop":
         # TODO this is just a proof of concept way of doing this
-        return _loop(clause_list, meta_data, backend, *args, **kwargs)
+        return _loop(clause_list, meta_data, backend, code, *args, **kwargs)
     elif directive == "atomic":
         pass
     elif directive == "cache":
@@ -88,7 +89,8 @@ def _apply_pragma_helper(directive,
     else:
         raise ValueError("Unrecognized construct or directive:", directive)
 
-def _loop(clauses, meta_data, back_end, *args, **kwargs):
+# TODO: This should really be put into its own module - each directive should
+def _loop(clauses, meta_data, back_end, code_object, *args, **kwargs):
     """
     From the docs:
     The loop construct can describe what type of parallelism to use to
@@ -157,8 +159,8 @@ def _loop(clauses, meta_data, back_end, *args, **kwargs):
     v = loop_visitor(atok)
     v.visit(tree)
 
-    task_source = v.loop_code
-    task_vars = set(v.loop_vars)
+    meta_data.region_source = v.loop_code
+    meta_data.region_vars = set(v.loop_vars)
     frame = meta_data.stackframe[0] # In 3.5, this can be stackframe.frame
     func_names = util.get_function_names_from_source(meta_data.src,
             meta_data.funcs_name)
@@ -172,8 +174,6 @@ def _loop(clauses, meta_data, back_end, *args, **kwargs):
     funcs = meta_data.funcs_funcs + meta_data.callers_funcs
     module_vars = meta_data.funcs_mods + meta_data.callers_mods
 
-    new_source = back_end.for_loop(src=meta_data.src, task_src=task_source,
-            task_vars=task_vars, arg_vars=meta_data.signature.parameters,
-            imports=module_vars, functions_srcs=funcs)
+    new_source = back_end.for_loop(code_object, meta_data)
     return new_source
 
