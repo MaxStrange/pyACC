@@ -3,6 +3,7 @@ The main accelerator decorator and load_back_end function.
 
 These two functions are the only API functions from an end-user's perspective.
 """
+import acc.frontend.util.util as util
 import acc.frontend.frontend as frontend
 from acc.frontend.util.metavars import MetaVars
 import dill
@@ -58,7 +59,9 @@ def acc():
                                                         back,
                                                         *args,
                                                         **kwargs)
-            return accumulated_function
+            fname = util.compile_kernel_module(accumulated_function)
+            mod = util.load_kernel_module(fname)
+            return mod.execute(*args, **kwargs)
         return wrapper
     return decorate
 

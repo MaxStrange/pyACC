@@ -157,7 +157,5 @@ def _loop(clauses, meta_data, back_end, *args, **kwargs):
     new_source = back_end.for_loop(src=meta_data.src, task_src=task_source,
             task_vars=task_vars, arg_vars=meta_data.signature.parameters,
             imports=module_vars, functions_srcs=funcs)
-    fname = util.compile_kernel_module(new_source)
-    mod = util.load_kernel_module(fname)
-    return mod.execute(*args, **kwargs)
+    return new_source
 
