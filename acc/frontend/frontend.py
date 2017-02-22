@@ -11,6 +11,24 @@ import asttokens
 import os
 
 
+def parse_pragmas(meta_data, *args, **kwargs):
+    """
+    Generator that yields pragmas one ata time from the function
+    given in meta_data.
+    """
+    # TODO
+    pass
+
+
+def apply_pragma(code, pragma, meta_data, *args, **kwargs):
+    """
+    Returns modified 'code' after applying any pragmas.
+    'code' is a Code object.
+    """
+    # TODO
+    pass
+
+
 def parallelize_for_loop(clauses, meta_data, back_end, *args, **kwargs):
     """
     Parallelizes a for loop.

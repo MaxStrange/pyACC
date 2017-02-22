@@ -11,7 +11,11 @@ def modules_local_function(nothing):
 
 @acc(con_or_dir="loop", clauses=[])
 def square(ls):
+    """
+    This is the test function's doc string
+    """
     modules_local_function(None)
+    # This is a comment in the test function
     y = str(mat.sqrt(5)).join(["a", "b"])
     sqrs = []
     for x in ls:

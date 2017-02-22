@@ -13,12 +13,16 @@ import sys
 # The back end
 back = None
 
-def acc(*, con_or_dir, clauses=None):
+def acc():
     """
     The main accelerator decorator.
 
     Usage:
-    @acc(con_or_dir=<a construct or directive>, clauses=<a list of clauses>)
+    @acc()
+    def function_to_list_pragmas_in(data, ret):
+        #pragma acc parallel loop copyout=ret[0:len(data)]
+        for d in data:
+            ret.append(d ** 2)
 
     NOTE: You cannot use global variables in the function that is decorated.
           The results are undefined if you do that, but it will likely result
@@ -26,44 +30,9 @@ def acc(*, con_or_dir, clauses=None):
           function. Python passes objects by reference anyway, so don't worry
           about the overhead.
 
-    TODO:
-    - Currently, every line of acc pragma needs to wrap a whole function, so
-      if you wanted to do this:
-
-      #pragma acc data copyin(a,b) copy(c)
-      #pragma acc kernels
-      #pragma acc loop independent
-      ---------code---------------
-
-      In pyACC, you would need to do this:
-
-      @acc(con_or_dir="data", clauses=["copyin(a,b)", "copy(c)"])
-      def a(blah):
-          b(blah)
-
-      @acc(con_or_dir="kernels", clauses=None)
-      def b(blah):
-          c(blah)
-
-      @acc(con_or_dir="loop", clauses=["independent"])
-      def c(blah):
-          ---------------code------------
-
-      Obviously, this is awful and needs improvement.
-      This is an easy fix though: Just do this:
-
-      @acc({"data": ["copyin(a,b)", "copy(c)],
-            "kernels": [],
-            "loop": ["independent"]})
-          -------------code-------------
-
-      For an even better user experience, it really should be a full parser,
-      so that you can do this:
-
-# TODO: Make this happen ###################################################
-      @acc("data copyin(a,b) copy(c); kernels; loop indepenedent")
-          -------------code-------------
-############################################################################
+    The decorator will scan the decorated function, parse any pragmas it sees,
+    rewrite the function into a module, load the module, and then
+    run the re-written function on the fly.
     """
     def decorate(func):
         @wraps(func)
@@ -79,6 +48,17 @@ def acc(*, con_or_dir, clauses=None):
             module = sys.modules[func.__module__]
             meta_data = MetaVars(src=source, stackframe=stackframe,
                     signature=signature, funcs_name=fname, funcs_module=module)
+
+            accumulated_function = None
+            for pragma in frontend.parse_pragmas(meta_data, *args, **kwargs):
+                accumulated_function = frontend.apply_pragma(
+                                                        accumulated_function,
+                                                        pragma,
+                                                        meta_data,
+                                                        *args,
+                                                        **kwargs)
+
+            # TODO: execute the accumulated function instead of the wrapped one
 
             if con_or_dir == "parallel":
                 pass

@@ -10,8 +10,9 @@ The idea is that you can use Python metaprogramming to accomplish the same
 thing as OpenACC compiler directives. E.g.:
 
 ```python
-@acc(con_or_dir="parallel", clauses=["loop", "copyout=ret[0:len(data)]")
-def dosomething(data, ret):
+@acc()
+def do_something(data, ret):
+    #pragma acc parallel loop copyout=ret[0:len(data)]
     for d in data:
         ret.append(d ** 2)
 ```
