@@ -9,6 +9,7 @@ from acc.frontend.loop.visitor import loop_visitor
 import ast
 import asttokens
 import os
+import re
 
 
 def parse_pragmas(meta_data, *args, **kwargs):
@@ -16,27 +17,79 @@ def parse_pragmas(meta_data, *args, **kwargs):
     Generator that yields pragmas one ata time from the function
     given in meta_data.
     """
-    # TODO
-    pass
+    regexp = re.compile("^((\s)*#(\s)*(pragma)(\s)*(acc))")
+    for line in meta_data.src.split(os.linesep):
+        if regexp.match(line):
+            yield line.strip()
 
 
-def apply_pragma(code, pragma, meta_data, *args, **kwargs):
+def apply_pragma(code, pragma, meta_data, backend, *args, **kwargs):
     """
     Returns modified 'code' after applying any pragmas.
     'code' is a Code object.
     """
-    # TODO
-    pass
+    directive_and_clauses = pragma.partition("acc")[-1].split(' ')
+    directive_and_clauses = [word for word in directive_and_clauses if\
+                             word != '']
+    directive = directive_and_clauses[0]
+    clause_list = directive_and_clauses[1:]
+    return _apply_pragma_helper(directive,
+                                clause_list,
+                                code,
+                                meta_data,
+                                backend,
+                                *args,
+                                **kwargs)
 
-
-def parallelize_for_loop(clauses, meta_data, back_end, *args, **kwargs):
+def _apply_pragma_helper(directive,
+                         clause_list,
+                         code,
+                         meta_data,
+                         backend,
+                         *args,
+                         **kwargs):
     """
-    Parallelizes a for loop.
-    ###################################################################
-    This is just a proof of concept function to show the idea.
-    This will only parallelize the first for loop in the
-    given function.
-    ###################################################################
+    Applies the given directive and its associated clause list
+    to the given code (with the help of the meta_data).
+    Returns the code after modifiying it.
+    """
+    # TODO: This is the main batch of work that needs to get done
+    if directive == "parallel":
+        pass
+    elif directive == "kernels":
+        pass
+    elif directive == "data":
+        pass
+    elif directive == "host_data":
+        pass
+    elif directive == "loop":
+        # TODO this is just a proof of concept way of doing this
+        return _loop(clause_list, meta_data, backend, *args, **kwargs)
+    elif directive == "atomic":
+        pass
+    elif directive == "cache":
+        pass
+    elif directive == "declare":
+        pass
+    elif directive == "init":
+        pass
+    elif directive == "shutdown":
+        pass
+    elif directive == "set":
+        pass
+    elif directive == "update":
+        pass
+    elif directive == "wait":
+        pass
+    elif directive == "enter_data":
+        pass
+    elif directive == "exit_data":
+        pass
+    else:
+        raise ValueError("Unrecognized construct or directive:", directive)
+
+def _loop(clauses, meta_data, back_end, *args, **kwargs):
+    """
     From the docs:
     The loop construct can describe what type of parallelism to use to
     execute the loop and declare private variables and arrays and reduction
@@ -53,7 +106,7 @@ def parallelize_for_loop(clauses, meta_data, back_end, *args, **kwargs):
     - device_type( device-type-list )
     - independent
     - private( var-list )
-    - reduction( operator:var-list)
+    - reduction( operator:var-list )
 
         Where gang-arg is one of:
         - [num:]int-expr
@@ -64,7 +117,7 @@ def parallelize_for_loop(clauses, meta_data, back_end, *args, **kwargs):
         - int-expr
 
     Restrictions:
-    - Only the collapse, gange, worker, vector, seq, auto and tile clauses may
+    - Only the collapse, gang, worker, vector, seq, auto and tile clauses may
       follow a device_type clause.
     - The int-expr argument to the worker and vector clauses must be
       invariant in the kernels region.
@@ -74,6 +127,12 @@ def parallelize_for_loop(clauses, meta_data, back_end, *args, **kwargs):
     """
     # TODO: first parse the clauses list (see the docs for the clauses'
     #       descriptions associated with each directive or construct)
+
+    # TODO: parse the source into the intermediate representation used
+    #       by the backend
+
+    # TODO: hand the intermediate representation off to the appropriate
+    #       function in the backend
 
     atok = asttokens.ASTTokens(meta_data.src, parse=True)
     tree = atok.tree
@@ -101,7 +160,4 @@ def parallelize_for_loop(clauses, meta_data, back_end, *args, **kwargs):
     fname = util.compile_kernel_module(new_source)
     mod = util.load_kernel_module(fname)
     return mod.execute(*args, **kwargs)
-
-
-
 

@@ -9,7 +9,7 @@ import math as mat
 def modules_local_function(nothing):
     print("This module is a hoax!")
 
-@acc(con_or_dir="loop", clauses=[])
+@acc()
 def square(ls):
     """
     This is the test function's doc string
@@ -18,6 +18,7 @@ def square(ls):
     # This is a comment in the test function
     y = str(mat.sqrt(5)).join(["a", "b"])
     sqrs = []
+    # pragma acc loop
     for x in ls:
         sqrs.append(x * x)
     a = [d for d in ls]

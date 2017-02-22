@@ -55,48 +55,10 @@ def acc():
                                                         accumulated_function,
                                                         pragma,
                                                         meta_data,
+                                                        back,
                                                         *args,
                                                         **kwargs)
-
-            # TODO: execute the accumulated function instead of the wrapped one
-
-            if con_or_dir == "parallel":
-                pass
-            elif con_or_dir == "kernels":
-                pass
-            elif con_or_dir == "data":
-                pass
-            elif con_or_dir == "host_data":
-                pass
-            elif con_or_dir == "loop":
-                return frontend.parallelize_for_loop(clauses,
-                                                     meta_data,
-                                                     back,
-                                                     *args,
-                                                     **kwargs)
-            elif con_or_dir == "atomic":
-                pass
-            elif con_or_dir == "cache":
-                pass
-            elif con_or_dir == "declare":
-                pass
-            elif con_or_dir == "init":
-                pass
-            elif con_or_dir == "shutdown":
-                pass
-            elif con_or_dir == "set":
-                pass
-            elif con_or_dir == "update":
-                pass
-            elif con_or_dir == "wait":
-                pass
-            elif con_or_dir == "enter data":
-                pass
-            elif con_or_dir == "exit_data":
-                pass
-            else:
-                raise ValueError("Unrecognized construct or directive: ",
-                        con_or_dir)
+            return accumulated_function
         return wrapper
     return decorate
 
