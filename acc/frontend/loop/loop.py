@@ -3,8 +3,9 @@ Module for the loop directive.
 
 Provides one API function: loop
 """
-import acc.frontend.util.util as util
+from acc.ir.intrep import Code
 from acc.frontend.loop.visitor import loop_visitor
+import acc.frontend.util.util as util
 import asttokens
 
 def loop(clauses, meta_data, back_end, code_object, *args, **kwargs):
@@ -71,6 +72,8 @@ def loop(clauses, meta_data, back_end, code_object, *args, **kwargs):
     #       The backend will give back a Code object that is the so-far
     #       accumulated function plus changes made due to the latest directive.
 
+    # TODO: This is all just a proof of concept right now and will shortly be
+    # changed.
     atok = asttokens.ASTTokens(meta_data.src, parse=True)
     tree = atok.tree
     v = loop_visitor(atok)
@@ -92,4 +95,4 @@ def loop(clauses, meta_data, back_end, code_object, *args, **kwargs):
     module_vars = meta_data.funcs_mods + meta_data.callers_mods
 
     new_source = back_end.for_loop(code_object, meta_data)
-    return new_source
+    return Code(new_source)

@@ -33,7 +33,8 @@ def acc():
 
     The decorator will scan the decorated function, parse any pragmas it sees,
     rewrite the function into a module, load the module, and then
-    run the re-written function on the fly.
+    run the re-written function on the fly, rather than running the decorated
+    function as is.
     """
     def decorate(func):
         @wraps(func)
@@ -59,7 +60,7 @@ def acc():
                                                         back,
                                                         *args,
                                                         **kwargs)
-            fname = util.compile_kernel_module(accumulated_function)
+            fname = util.compile_kernel_module(accumulated_function.src)
             mod = util.load_kernel_module(fname)
             return mod.execute(*args, **kwargs)
         return wrapper

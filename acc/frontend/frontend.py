@@ -62,7 +62,6 @@ def _apply_pragma_helper(directive,
     elif directive == "host_data":
         pass
     elif directive == "loop":
-        # TODO this is just a proof of concept way of doing this
         return loop(clause_list, meta_data, backend, code, *args, **kwargs)
     elif directive == "atomic":
         pass

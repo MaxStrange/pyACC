@@ -17,4 +17,4 @@ class Code:
         """
         @param src: Source code. I imagine that this will be a string.
         """
-        self._src = src
+        self.src = src
