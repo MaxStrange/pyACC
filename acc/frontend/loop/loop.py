@@ -141,6 +141,10 @@ def _collapse(index, clause_list, code_object, meta_data, back_end):
     clause on the construct is applied ot each loop, or to the
     linearized iteration space.
     """
+    #TODO: This one's easy enough: just make sure that the number of iterations
+    #      on each of the loops is invariant and countable and then set in the
+    #      code_object a value to tell it which loops are talked about by the
+    #      rest of the clauses.
     return -1, code_object
 
 def _gang(index, clause_list, code_object, meta_data, back_end):
