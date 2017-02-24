@@ -5,6 +5,7 @@ Provides one API function: loop
 """
 from acc.ir.intrep import Code
 from acc.frontend.loop.visitor import loop_visitor
+from acc.frontend.util.errors import InvalidClauseError
 import acc.frontend.util.util as util
 import asttokens
 
@@ -45,36 +46,16 @@ def loop(clauses, meta_data, back_end, code_object, *args, **kwargs):
       clause must be written such that the loop iteration count is
       computable when entering the loop construct.
     """
-    # TODO: first parse the clauses list (see the docs for the clauses'
-    #       descriptions associated with each directive or construct)
+    index = 0
+    while index != -1:
+        index, code_object = _apply_clause(index,
+                                           clauses,
+                                           code_object,
+                                           meta_data,
+                                           back_end)
 
-    # TODO: parse the source into the intermediate representation used
-    #       by the backend
-    # --->  The backend will need the following:
-    #       - meta variables (which it is NOT allowed to change)
-    #       - original source code of the decorated function
-    #           ---> packaged into a Code object which contains the
-    #                source and the context in which that source is running.
-    #                This context information should be appropriately updated
-    #                by the backend to match which lines are under which
-    #                context. That is, what region of the original source code
-    #                is under parallel context or kernels context?
-    #                It also needs the line number of the pragma the backend is
-    #                supposed to be working on.
-    #       - the function so far accumulated
-    #           ---> This function is a Code object that contains the so-far
-    #                modified function and the context in which different
-    #                regions of the code are being run. TODO not sure if we
-    #                need both this code and the above code to have the context
-    #                information.
-    #                It may also need some way of being easy for the backend to
-    #                figure out where it left off.
-    #       The backend will give back a Code object that is the so-far
-    #       accumulated function plus changes made due to the latest directive.
-
-    # TODO: This is all just a proof of concept right now and will shortly be
-    # changed.
-    atok = asttokens.ASTTokens(meta_data.src, parse=True)
+    #atok = asttokens.ASTTokens(meta_data.src, parse=True)
+    atok = asttokens.ASTTokens(code_object.src, parse=True)
     tree = atok.tree
     v = loop_visitor(atok)
     v.visit(tree)
@@ -82,7 +63,8 @@ def loop(clauses, meta_data, back_end, code_object, *args, **kwargs):
     meta_data.region_source = v.loop_code
     meta_data.region_vars = set(v.loop_vars)
     frame = meta_data.stackframe[0] # In 3.5, this can be stackframe.frame
-    func_names = util.get_function_names_from_source(meta_data.src,
+    #func_names = util.get_function_names_from_source(meta_data.src,
+    func_names = util.get_function_names_from_source(code_object.src,
             meta_data.funcs_name)
 
     meta_data.callers_mods = util.get_modules_from_stackframe(frame)
@@ -96,3 +78,101 @@ def loop(clauses, meta_data, back_end, code_object, *args, **kwargs):
 
     new_source = back_end.for_loop(code_object, meta_data)
     return Code(new_source)
+
+
+def _apply_clause(index, clause_list, code_object, meta_data, back_end):
+    """
+    Consumes however much of the clause list as necessary to apply the clause
+    found at index in the clause_list.
+
+    @param index:       The index into the clause_list of the clause we are
+                        interested int.
+
+    @param clause_list: The list of the clauses that this clause is indexed in.
+
+    @return:            The new index and new Code. If there are no more
+                        clauses after this one is done, index will be -1.
+    """
+    args = (index, clause_list, code_object, meta_data, back_end)
+    clause = clause_list[index]
+    if   clause.startswith("collapse"):
+        return _collapse(*args)
+    elif clause.startswith("gang"):
+        return _gang(*args)
+    elif clause.startswith("worker"):
+        return _worker(*args)
+    elif clause.startswith("vector"):
+        return _vector(*args)
+    elif clause.startswith("seq"):
+        return _seq(*args)
+    elif clause.startswith("auto"):
+        return _auto(*args)
+    elif clause.startswith("tile"):
+        return _tile(*args)
+    elif clause.startswith("device_type"):
+        return _device_type(*args)
+    elif clause.startswith("independent"):
+        return _independent(*args)
+    elif clause.startswith("private"):
+        return _private(*args)
+    elif clause.startswith("reduction"):
+        return _reduction(*args)
+    else:
+        raise InvalidClauseError("Clause either not allowed for this " +\
+                "directive, or else it may be spelled " +\
+                "incorrectly. Clause given: " + clause)
+#TODO do this crap
+def _collapse(index, clause_list, code_object, meta_data, back_end):
+    """
+    """
+    return -1, code_object
+
+def _gang(index, clause_list, code_object, meta_data, back_end):
+    """
+    """
+    return -1, code_object
+
+def _worker(index, clause_list, code_object, meta_data, back_end):
+    """
+    """
+    return -1, code_object
+
+def _vector(index, clause_list, code_object, meta_data, back_end):
+    """
+    """
+    return -1, code_object
+
+def _seq(index, clause_list, code_object, meta_data, back_end):
+    """
+    """
+    return -1, code_object
+
+def _auto(index, clause_list, code_object, meta_data, back_end):
+    """
+    """
+    return -1, code_object
+
+def _tile(index, clause_list, code_object, meta_data, back_end):
+    """
+    """
+    return -1, code_object
+
+def _device_type(index, clause_list, code_object, meta_data, back_end):
+    """
+    """
+    return -1, code_object
+
+def _independent(index, clause_list, code_object, meta_data, back_end):
+    """
+    """
+    return -1, code_object
+
+def _private(index, clause_list, code_object, meta_data, back_end):
+    """
+    """
+    return -1, code_object
+
+def _reduction(index, clause_list, code_object, meta_data, back_end):
+    """
+    """
+    return -1, code_object

@@ -6,6 +6,7 @@ These two functions are the only API functions from an end-user's perspective.
 import acc.frontend.util.util as util
 import acc.frontend.frontend as frontend
 from acc.ir.metavars import MetaVars
+from acc.ir.intrep import Code
 import dill
 from functools import wraps
 import inspect
@@ -51,7 +52,7 @@ def acc():
             meta_data = MetaVars(src=source, stackframe=stackframe,
                     signature=signature, funcs_name=fname, funcs_module=module)
 
-            accumulated_function = None
+            accumulated_function = Code(meta_data.src)
             for pragma in frontend.parse_pragmas(meta_data, *args, **kwargs):
                 accumulated_function = frontend.apply_pragma(
                                                         accumulated_function,
