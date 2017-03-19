@@ -7,6 +7,7 @@ from acc.ir.intrep import Code
 from acc.frontend.loop.visitor import loop_visitor
 from acc.frontend.util.errors import InvalidClauseError
 import acc.frontend.util.util as util
+import ast
 import asttokens
 
 def loop(clauses, meta_data, back_end, code_object, *args, **kwargs):
@@ -56,7 +57,6 @@ def loop(clauses, meta_data, back_end, code_object, *args, **kwargs):
 
     # TODO: This is proof of concept stuff
 
-
     atok = asttokens.ASTTokens(code_object.src, parse=True)
     tree = atok.tree
     v = loop_visitor(atok)
@@ -96,6 +96,7 @@ def _apply_clause(index, clause_list, code_object, meta_data, back_end):
     """
     args = (index, clause_list, code_object, meta_data, back_end)
     clause = clause_list[index]
+    print("clause:", clause)
     if   clause.startswith("collapse"):
         return _collapse(*args)
     elif clause.startswith("gang"):
@@ -145,6 +146,44 @@ def _collapse(index, clause_list, code_object, meta_data, back_end):
     #      on each of the loops is invariant and countable and then set in the
     #      code_object a value to tell it which loops are talked about by the
     #      rest of the clauses.
+
+    # for node in tree:
+    #   if node is not a loop:
+    #       break
+    #   elif not loop is invariant and countable:
+    #       break
+    #   else:
+    #       num_loops += 1
+    # if num_loops != n:
+    #   raise some sort of error that explains how many and which loops were
+    #   found, and that you want n loops collapsed, but we could only
+    #   guarantee num_loops
+    #
+    # code_object.num_loops = num_loops
+
+    class _visitor(ast.NodeVisitor):
+        def __init__(self, atok):
+            self.atok = atok
+            self._seen = set()
+
+        def generic_visit(self, node):
+            type_name = type(node).__name__
+
+            if type_name == "comprehension":
+                # TODO
+                pass
+            elif type_name == "For":
+                # TODO
+                pass
+            ast.NodeVisitor.generic_visit(self, node)
+
+    atok = asttokens.ASTTokens(code_object.src, parse=True)
+    tree = atok.tree
+    v = _visitor(atok)
+    v.visit(tree)
+    print("Done; exiting")
+    exit()
+
     return -1, code_object
 
 def _gang(index, clause_list, code_object, meta_data, back_end):
@@ -172,7 +211,7 @@ def _gang(index, clause_list, code_object, meta_data, back_end):
     clause may not contain another loop with a 'gang' clause unless within
     a nested compute region.
 
-    The scheduling of loop itdrations to gangs is not specified unless
+    The scheduling of loop iterations to gangs is not specified unless
     the 'static' argument appears as an argument. If the 'static' argument
     appears with an integer expression, that expression is used as a chunk
     size. If the static argument appears with an asterisk, the
