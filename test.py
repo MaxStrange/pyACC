@@ -2,8 +2,6 @@
 Test script.
 """
 from acc.api import acc, load_back_end
-from tensorflow.python.ops import rnn, rnn_cell
-import tensorflow as tf
 import testmodule
 import os
 from tqdm import tqdm

@@ -54,23 +54,26 @@ def acc():
             stackframe = inspect.stack()[1]
 
             # Put together all the stuff we need in order to rewrite the function
-            fname = func.__name__
+            funcname = func.__name__
             module = sys.modules[func.__module__]
-            meta_data = MetaVars(src=source, stackframe=stackframe, signature=signature, funcs_name=fname, funcs_module=module)
+            meta_data = MetaVars(src=source, stackframe=stackframe, signature=signature, funcs_name=funcname, funcs_module=module)
 
             # Now we do N passes over the old function, re-writing it each time. N is the number of pragmas found.
             accumulated_function = Code(meta_data.src)
             for pragma in frontend.parse_pragmas(meta_data, *args, **kwargs):
                 accumulated_function = frontend.apply_pragma(accumulated_function, pragma, meta_data, back, *args, **kwargs)
 
-            # Dump the source code that we created into a file and compile it.
-            fname = util.compile_kernel_module(accumulated_function.src)
+            # Dump the source code that we created into a file
+            oldmodulesource = dill.source.getsource(module)
+            newmodulesource = oldmodulesource.replace(source, accumulated_function.src.strip("@acc()"))
+            fname = util.compile_kernel_module(newmodulesource)
 
             # Import the new module.
             mod = util.load_kernel_module(fname)
 
             # Return the result of executing the newly written function.
-            return mod.execute(*args, **kwargs)
+            func_to_execute = getattr(mod, funcname)
+            return func_to_execute(*args, **kwargs)
         return wrapper
     return decorate
 
