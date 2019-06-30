@@ -6,8 +6,8 @@ import ast
 import asttokens
 import inspect
 import os
+import tempfile
 import types
-
 
 def compile_kernel_module(src):
     """
@@ -15,10 +15,9 @@ def compile_kernel_module(src):
     into the running Python program with a call to load_kernel_module.
     Returns the name of the module.
     """
-    fname = "para_region_name_mangle.py"
-    with open(fname, 'w') as f:
-        f.write(src)
-    return fname
+    tmpfile = tempfile.NamedTemporaryFile()
+    tmpfile.write(src)
+    return tmpfile.name
 
 def load_kernel_module(fname):
     """
