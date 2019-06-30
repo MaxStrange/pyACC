@@ -7,7 +7,6 @@ frontend by the acc module.
 from acc.ir.intrep import Code
 from acc.frontend.loop.loop import loop
 import asttokens
-import os
 import re
 
 
@@ -17,10 +16,9 @@ def parse_pragmas(meta_data, *args, **kwargs):
     given in meta_data.
     """
     regexp = re.compile("^((\s)*#(\s)*(pragma)(\s)*(acc))")
-    for line in meta_data.src.split(os.linesep):
+    for line in meta_data.src.splitlines():
         if regexp.match(line):
-            yield line.strip()
-
+            yield line
 
 def apply_pragma(code, pragma, meta_data, backend, *args, **kwargs):
     """
@@ -32,21 +30,9 @@ def apply_pragma(code, pragma, meta_data, backend, *args, **kwargs):
                              word != '']
     directive = directive_and_clauses[0]
     clause_list = directive_and_clauses[1:]
-    return _apply_pragma_helper(directive,
-                                clause_list,
-                                code,
-                                meta_data,
-                                backend,
-                                *args,
-                                **kwargs)
+    return _apply_pragma_helper(directive, clause_list, code, meta_data, backend, *args, **kwargs)
 
-def _apply_pragma_helper(directive,
-                         clause_list,
-                         code,
-                         meta_data,
-                         backend,
-                         *args,
-                         **kwargs):
+def _apply_pragma_helper(directive, clause_list, code, meta_data, backend, *args, **kwargs):
     """
     Applies the given directive and its associated clause list
     to the given code (with the help of the meta_data).
@@ -85,4 +71,3 @@ def _apply_pragma_helper(directive,
         pass
     else:
         raise ValueError("Unrecognized construct or directive:", directive)
-

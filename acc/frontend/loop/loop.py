@@ -49,11 +49,7 @@ def loop(clauses, meta_data, back_end, code_object, *args, **kwargs):
     """
     index = 0
     while index != -1:
-        index, code_object = _apply_clause(index,
-                                           clauses,
-                                           code_object,
-                                           meta_data,
-                                           back_end)
+        index, code_object = _apply_clause(index, clauses, code_object, meta_data, back_end)
 
     # TODO: This is proof of concept stuff
 
@@ -65,13 +61,11 @@ def loop(clauses, meta_data, back_end, code_object, *args, **kwargs):
     meta_data.region_source = v.loop_code
     meta_data.region_vars = set(v.loop_vars)
     frame = meta_data.stackframe[0] # In 3.5, this can be stackframe.frame
-    func_names = util.get_function_names_from_source(code_object.src,
-            meta_data.funcs_name)
+    func_names = util.get_function_names_from_source(code_object.src, meta_data.funcs_name)
 
     meta_data.callers_mods = util.get_modules_from_stackframe(frame)
     meta_data.callers_funcs = util.get_functions_from_stackframe(frame, func_names)
-    meta_data.funcs_funcs = util.get_functions_from_module(meta_data.funcs_module,
-            func_names)
+    meta_data.funcs_funcs = util.get_functions_from_module(meta_data.funcs_module, func_names)
     meta_data.funcs_mods = util.get_modules_from_module(meta_data.funcs_module)
 
     funcs = meta_data.funcs_funcs + meta_data.callers_funcs
@@ -79,7 +73,6 @@ def loop(clauses, meta_data, back_end, code_object, *args, **kwargs):
 
     new_source = back_end.for_loop(code_object, meta_data)
     return Code(new_source)
-
 
 def _apply_clause(index, clause_list, code_object, meta_data, back_end):
     """
@@ -123,6 +116,7 @@ def _apply_clause(index, clause_list, code_object, meta_data, back_end):
         raise InvalidClauseError("Clause either not allowed for this " +\
                 "directive, or else it may be spelled " +\
                 "incorrectly. Clause given: " + clause)
+
 #TODO do this crap
 def _collapse(index, clause_list, code_object, meta_data, back_end):
     """
