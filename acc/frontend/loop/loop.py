@@ -80,7 +80,7 @@ def _apply_clause(index, clause_list, code_object, meta_data, back_end):
     found at index in the clause_list.
 
     @param index:       The index into the clause_list of the clause we are
-                        interested int.
+                        interested in.
 
     @param clause_list: The list of the clauses that this clause is indexed in.
 
@@ -133,7 +133,7 @@ def _collapse(index, clause_list, code_object, meta_data, back_end):
     the loops.
 
     It is implementation-defined whether a 'gang', 'worker' or 'vector'
-    clause on the construct is applied ot each loop, or to the
+    clause on the construct is applied to each loop, or to the
     linearized iteration space.
     """
     #TODO: This one's easy enough: just make sure that the number of iterations
