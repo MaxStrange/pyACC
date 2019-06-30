@@ -1,5 +1,7 @@
 # pyACC
 
+[![Build Status](https://travis-ci.org/MaxStrange/pyACC.svg?branch=master)](https://travis-ci.org/MaxStrange/pyACC)
+
 OpenACC for Python
 
 Rhymes with "kayak".
