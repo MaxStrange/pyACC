@@ -11,9 +11,9 @@ class MetaVars:
     passed around.
     """
     def __init__(self, *, src=None, stackframe=None, signature=None,
-            signature_vars=None, callers_mods=None, callers_funcs=None,
-            funcs_mods=None, funcs_funcs=None, funcs_name=None,
-            funcs_module=None, region_src=None, region_vars=None):
+                    signature_vars=None, callers_mods=None, callers_funcs=None,
+                    funcs_mods=None, funcs_funcs=None, funcs_name=None,
+                    funcs_module=None, region_src=None, region_vars=None):
         """
         @param src:             The source code of the acc-decorated function
 
@@ -80,4 +80,3 @@ class MetaVars:
         s += ")"
 
         return s
-

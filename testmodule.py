@@ -1,7 +1,6 @@
 """
 This is a module.
 """
-
 from acc.api import acc
 import tensorflow as tf
 import math as mat

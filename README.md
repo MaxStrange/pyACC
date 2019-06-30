@@ -1,4 +1,5 @@
 # pyACC
+
 OpenACC for Python
 
 Rhymes with "kayak".
@@ -28,7 +29,9 @@ Obviously, pyACC would be significantly slower than OpenACC, but pyOpenCL or pyC
 slower than their C/C++ counterparts. Blah blah blah speed/usability tradeoff blah blah.
 
 ## Dependencies
+
 Just pip3 install the following:
+
 - asttokens
 - dill
 - tqdm (probably won't be necessary in the future)

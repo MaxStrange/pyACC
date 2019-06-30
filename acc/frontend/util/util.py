@@ -20,7 +20,6 @@ def compile_kernel_module(src):
         f.write(src)
     return fname
 
-
 def load_kernel_module(fname):
     """
     Loads the given Python file into the running program as a module
@@ -29,7 +28,6 @@ def load_kernel_module(fname):
     mod = __import__(fname[:-3])
     os.remove(fname)
     return mod
-
 
 def get_function_names_from_source(src, ignore):
     """
@@ -47,14 +45,12 @@ def get_function_names_from_source(src, ignore):
         func_names.remove(ignore)
     return list(func_names)
 
-
 def get_functions_from_module(module, func_names):
     """
     Gets all the functions from the module that are in func_names.
     See @get_functions_from_stackframe.
     """
-    names_in_module_and_func_names =\
-            set([name for name in dir(module) if name in func_names])
+    names_in_module_and_func_names = set([name for name in dir(module) if name in func_names])
     funcs = [getattr(module, name) for name in names_in_module_and_func_names]
     func_sources = []
     for f in funcs:
@@ -71,7 +67,6 @@ def get_functions_from_module(module, func_names):
             # rather than OSError
             pass
     return func_sources
-
 
 def get_functions_from_stackframe(frame, func_names):
     """
@@ -96,7 +91,6 @@ def get_functions_from_stackframe(frame, func_names):
     func_sources = [inspect.getsource(f) for f in funcs]
     return func_sources
 
-
 def get_modules_from_module(module):
     """
     Gets all the modules that the given one imports in the form:
@@ -106,7 +100,6 @@ def get_modules_from_module(module):
     items = [(name, getattr(module, name)) for name in global_var_names]
     items = [tup for tup in items if inspect.ismodule(tup[1])]
     return items
-
 
 def get_modules_from_stackframe(frame):
     """
@@ -118,7 +111,6 @@ def get_modules_from_stackframe(frame):
         if isinstance(val, types.ModuleType):
             items.append((name, val))
     return items
-
 
 def get_variables_from_source(src):
     """
@@ -134,7 +126,6 @@ def get_variables_from_source(src):
     v.visit(tree)
     return v.ids
 
-
 def left_strip_src(src):
     """
     Left-justifies the given source code.
@@ -147,7 +138,6 @@ def left_strip_src(src):
     as_list = [" " * space + line for line, space in zip(as_list, spaces)]
     return os.linesep.join(as_list)
 
-
 def _num_spaces(line):
     """
     How many spaces are there on the left of this line?
@@ -159,7 +149,6 @@ def _num_spaces(line):
         else:
             break
     return num
-
 
 class _func_visitor(ast.NodeVisitor):
     """
@@ -183,7 +172,6 @@ class _func_visitor(ast.NodeVisitor):
 
         ast.NodeVisitor.generic_visit(self, node)
 
-
 class _name_visitor(ast.NodeVisitor):
     """
     This class gets all the variable names in a batch of python source
@@ -199,5 +187,3 @@ class _name_visitor(ast.NodeVisitor):
             self.ids.append(node.id)
 
         ast.NodeVisitor.generic_visit(self, node)
-
-
