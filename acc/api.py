@@ -6,7 +6,7 @@ These two functions are the only API functions from an end-user's perspective.
 import acc.frontend.util.util as util
 import acc.frontend.frontend as frontend
 from acc.ir.metavars import MetaVars
-from acc.ir.intrep import Code
+from acc.ir.intrep import IntermediateRepresentation
 import dill
 from functools import wraps
 import inspect
@@ -44,6 +44,11 @@ def acc():
             global back
             if not back:
                 raise ImportError("No back end loaded. First call load_back_end")
+            else:
+                try:
+                    getattr(back, "compile")
+                except AttributeError:
+                    raise ImportError("Back end does not have a 'compile' function.")
             # Grab the source code from the decorated function
             source = dill.source.getsource(func)
 
@@ -58,14 +63,17 @@ def acc():
             module = sys.modules[func.__module__]
             meta_data = MetaVars(src=source, stackframe=stackframe, signature=signature, funcs_name=funcname, funcs_module=module)
 
-            # Now we do N passes over the old function, re-writing it each time. N is the number of pragmas found.
-            accumulated_function = Code(meta_data.src)
+            intermediate_rep = IntermediateRepresentation(src=meta_data.src)
             for pragma in frontend.parse_pragmas(meta_data, *args, **kwargs):
-                accumulated_function = frontend.apply_pragma(accumulated_function, pragma, meta_data, back, *args, **kwargs)
+                # Side-effect-y: this function modifies intermediate_rep each time
+                frontend.accumulate_pragma(intermediate_rep, pragma, meta_data, *args, **kwargs)
+
+            # Pass the intermediate representation into the backend to get the new source code
+            new_source = back.compile(intermediate_rep)
 
             # Dump the source code that we created into a file
             oldmodulesource = dill.source.getsource(module)
-            newmodulesource = oldmodulesource.replace(source, accumulated_function.src.strip("@acc()"))
+            newmodulesource = oldmodulesource.replace(source, new_source.strip("@acc()"))
             fname = util.compile_kernel_module(newmodulesource)
 
             # Import the new module.

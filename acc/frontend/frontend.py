@@ -4,11 +4,9 @@ This is the front end's API.
 This module exposes all of the functions that should be used from the
 frontend by the acc module.
 """
-from acc.ir.intrep import Code
 from acc.frontend.loop.loop import loop
 import asttokens
 import re
-
 
 def parse_pragmas(meta_data, *args, **kwargs):
     """
@@ -20,25 +18,23 @@ def parse_pragmas(meta_data, *args, **kwargs):
         if regexp.match(line):
             yield line
 
-def apply_pragma(code, pragma, meta_data, backend, *args, **kwargs):
+def accumulate_pragma(intermediate_rep, pragma, meta_data, backend, *args, **kwargs):
     """
-    Returns modified 'code' after applying any pragmas.
-    'code' is a Code object.
+    Modifies `intermediate_rep` according to `pragma`.
     """
     directive_and_clauses = pragma.partition("acc")[-1].split(' ')
-    directive_and_clauses = [word for word in directive_and_clauses if\
-                             word != '']
+    directive_and_clauses = [word for word in directive_and_clauses if word != '']
     directive = directive_and_clauses[0]
     clause_list = directive_and_clauses[1:]
-    return _apply_pragma_helper(directive, clause_list, code, meta_data, backend, *args, **kwargs)
+    _apply_pragma_helper(directive, clause_list, intermediate_rep, meta_data, backend, *args, **kwargs)
 
-def _apply_pragma_helper(directive, clause_list, code, meta_data, backend, *args, **kwargs):
+def _apply_pragma_helper(directive, clause_list, intermediate_rep, meta_data, backend, *args, **kwargs):
     """
     Applies the given directive and its associated clause list
-    to the given code (with the help of the meta_data).
-    Returns the code after modifiying it.
+    to the given intermediate_rep (with the help of the meta_data).
+    Modifies intermediate_rep in place.
     """
-    # TODO: This is the main batch of work that needs to get done
+    # TODO: This is the main batch of work that needs to get done to make this compliant with the OpenACC standard
     if directive == "parallel":
         pass
     elif directive == "kernels":
@@ -48,7 +44,7 @@ def _apply_pragma_helper(directive, clause_list, code, meta_data, backend, *args
     elif directive == "host_data":
         pass
     elif directive == "loop":
-        return loop(clause_list, meta_data, backend, code, *args, **kwargs)
+        loop(clause_list, meta_data, backend, intermediate_rep, *args, **kwargs)
     elif directive == "atomic":
         pass
     elif directive == "cache":

@@ -3,14 +3,14 @@ Module for the loop directive.
 
 Provides one API function: loop
 """
-from acc.ir.intrep import Code
-from acc.frontend.loop.visitor import loop_visitor
+from acc.ir.intrep import IntermediateRepresentation
 from acc.frontend.util.errors import InvalidClauseError
+from acc.frontend.loop.loopvisitors import collapse
 import acc.frontend.util.util as util
 import ast
 import asttokens
 
-def loop(clauses, meta_data, back_end, code_object, *args, **kwargs):
+def loop(clauses, meta_data, back_end, intermediate_rep, *args, **kwargs):
     """
     From the docs:
     The loop construct can describe what type of parallelism to use to
@@ -49,32 +49,32 @@ def loop(clauses, meta_data, back_end, code_object, *args, **kwargs):
     """
     index = 0
     while index != -1:
-        index, code_object = _apply_clause(index, clauses, code_object, meta_data, back_end)
+        index = _apply_clause(index, clauses, intermediate_rep, meta_data, back_end)
 
     # TODO: This is proof of concept stuff
 
-    atok = asttokens.ASTTokens(code_object.src, parse=True)
-    tree = atok.tree
-    v = loop_visitor(atok)
-    v.visit(tree)
+    #atok = asttokens.ASTTokens(intermediate_rep.src, parse=True)
+    #tree = atok.tree
+    #v = loop_visitor(atok)
+    #v.visit(tree)
 
-    meta_data.region_source = v.loop_code
-    meta_data.region_vars = set(v.loop_vars)
-    frame = meta_data.stackframe[0] # In 3.5, this can be stackframe.frame
-    func_names = util.get_function_names_from_source(code_object.src, meta_data.funcs_name)
+    #meta_data.region_source = v.loop_code
+    #meta_data.region_vars = set(v.loop_vars)
+    #frame = meta_data.stackframe[0] # In 3.5, this can be stackframe.frame
+    #func_names = util.get_function_names_from_source(intermediate_rep.src, meta_data.funcs_name)
 
-    meta_data.callers_mods = util.get_modules_from_stackframe(frame)
-    meta_data.callers_funcs = util.get_functions_from_stackframe(frame, func_names)
-    meta_data.funcs_funcs = util.get_functions_from_module(meta_data.funcs_module, func_names)
-    meta_data.funcs_mods = util.get_modules_from_module(meta_data.funcs_module)
+    #meta_data.callers_mods = util.get_modules_from_stackframe(frame)
+    #meta_data.callers_funcs = util.get_functions_from_stackframe(frame, func_names)
+    #meta_data.funcs_funcs = util.get_functions_from_module(meta_data.funcs_module, func_names)
+    #meta_data.funcs_mods = util.get_modules_from_module(meta_data.funcs_module)
 
-    funcs = meta_data.funcs_funcs + meta_data.callers_funcs
-    module_vars = meta_data.funcs_mods + meta_data.callers_mods
+    #funcs = meta_data.funcs_funcs + meta_data.callers_funcs
+    #module_vars = meta_data.funcs_mods + meta_data.callers_mods
 
-    new_source = back_end.for_loop(code_object, meta_data)
-    return Code(new_source)
+    #new_source = back_end.for_loop(intermediate_rep, meta_data)
+    #return IntermediateRepresentation(new_source)
 
-def _apply_clause(index, clause_list, code_object, meta_data, back_end):
+def _apply_clause(index, clause_list, intermediate_rep, meta_data, back_end):
     """
     Consumes however much of the clause list as necessary to apply the clause
     found at index in the clause_list.
@@ -84,11 +84,12 @@ def _apply_clause(index, clause_list, code_object, meta_data, back_end):
 
     @param clause_list: The list of the clauses that this clause is indexed in.
 
-    @return:            The new index and new Code. If there are no more
+    @return:            The new index. If there are no more
                         clauses after this one is done, index will be -1.
     """
-    args = (index, clause_list, code_object, meta_data, back_end)
+    args = (index, clause_list, intermediate_rep, meta_data, back_end)
     clause = clause_list[index]
+    # TODO: Remove this debug print
     print("clause:", clause)
     if   clause.startswith("collapse"):
         return _collapse(*args)
@@ -117,8 +118,7 @@ def _apply_clause(index, clause_list, code_object, meta_data, back_end):
                 "directive, or else it may be spelled " +\
                 "incorrectly. Clause given: " + clause)
 
-#TODO do this crap
-def _collapse(index, clause_list, code_object, meta_data, back_end):
+def _collapse(index, clause_list, intermediate_rep, meta_data, back_end):
     """
     The 'collapse' clause is used to specify how many tightly nested loops
     are associated with the 'loop' construct. The argument to the 'collapse'
@@ -138,7 +138,7 @@ def _collapse(index, clause_list, code_object, meta_data, back_end):
     """
     #TODO: This one's easy enough: just make sure that the number of iterations
     #      on each of the loops is invariant and countable and then set in the
-    #      code_object a value to tell it which loops are talked about by the
+    #      intermediate_value a value to tell it which loops are talked about by the
     #      rest of the clauses.
 
     # for node in tree:
@@ -153,34 +153,18 @@ def _collapse(index, clause_list, code_object, meta_data, back_end):
     #   found, and that you want n loops collapsed, but we could only
     #   guarantee num_loops
     #
-    # code_object.num_loops = num_loops
+    # intermediate_rep.num_loops = num_loops
 
-    class _visitor(ast.NodeVisitor):
-        def __init__(self, atok):
-            self.atok = atok
-            self._seen = set()
-
-        def generic_visit(self, node):
-            type_name = type(node).__name__
-
-            if type_name == "comprehension":
-                # TODO
-                pass
-            elif type_name == "For":
-                # TODO
-                pass
-            ast.NodeVisitor.generic_visit(self, node)
-
-    atok = asttokens.ASTTokens(code_object.src, parse=True)
+    atok = asttokens.ASTTokens(intermediate_rep.src, parse=True)
+    v = collapse.CollapseVisitor(atok)
     tree = atok.tree
-    v = _visitor(atok)
     v.visit(tree)
     print("Done; exiting")
     exit()
 
-    return -1, code_object
+    return -1
 
-def _gang(index, clause_list, code_object, meta_data, back_end):
+def _gang(index, clause_list, intermediate_rep, meta_data, back_end):
     """
     When the parent compute construct is a 'parallel' construct, or on an
     orphaned 'loop' construct, the 'gang' clause specifies that the
@@ -219,9 +203,9 @@ def _gang(index, clause_list, code_object, meta_data, back_end):
     number of gangs to use, and with 'static' clauses with the same argument,
     will assign the iterations to gangs in the same manner.
     """
-    return -1, code_object
+    return -1
 
-def _worker(index, clause_list, code_object, meta_data, back_end):
+def _worker(index, clause_list, intermediate_rep, meta_data, back_end):
     """
     When the parent compute construct is a 'parallel' construct, or on an
     orphaned 'loop' construct, the 'worker' clause specifies that the
@@ -247,9 +231,9 @@ def _worker(index, clause_list, code_object, meta_data, back_end):
     All workers will complete execution of their assigned iterations before
     any worker proceeds beyond the end of the loop.
     """
-    return -1, code_object
+    return -1
 
-def _vector(index, clause_list, code_object, meta_data, back_end):
+def _vector(index, clause_list, intermediate_rep, meta_data, back_end):
     """
     When the parent compute construct is a 'parallel' construct, or on an
     orphaned 'loop' construct, the 'vector' clause specifies that the
@@ -276,17 +260,17 @@ def _vector(index, clause_list, code_object, meta_data, back_end):
     All vector lanes will complete execution of their assigned iterations
     before any vector lane proceeds beyond the end of the loop.
     """
-    return -1, code_object
+    return -1
 
-def _seq(index, clause_list, code_object, meta_data, back_end):
+def _seq(index, clause_list, intermediate_rep, meta_data, back_end):
     """
     The 'seq' clause specifies that the associated loop or loops are to be
     executed sequentially by the acclerator. This clause will override any
     automatic parallelization or vectorization.
     """
-    return -1, code_object
+    return -1
 
-def _auto(index, clause_list, code_object, meta_data, back_end):
+def _auto(index, clause_list, intermediate_rep, meta_data, back_end):
     """
     The 'auto' clause specifies that the implementation must analyze the
     loop and determine whether to run the loop sequentially. The
@@ -296,9 +280,9 @@ def _auto(index, clause_list, code_object, meta_data, back_end):
     construct is a 'kernels' construct, a 'loop' construct with no
     'independent' or 'seq' clause is treated as if it has the 'auto' clause.
     """
-    return -1, code_object
+    return -1
 
-def _tile(index, clause_list, code_object, meta_data, back_end):
+def _tile(index, clause_list, intermediate_rep, meta_data, back_end):
     """
     The 'tile' clause specifies that the implementation should split each
     loop nest into two loops, with an outer set of tile loops and an
@@ -323,16 +307,16 @@ def _tile(index, clause_list, code_object, meta_data, back_end):
     to the element loops if no 'vector' clause appears, and to the tile
     loops otherwise.
     """
-    return -1, code_object
+    return -1
 
-def _device_type(index, clause_list, code_object, meta_data, back_end):
+def _device_type(index, clause_list, intermediate_rep, meta_data, back_end):
     """
     The 'device_type' clause is described in Section 2.4 Device-Specific
     Clauses.
     """
-    return -1, code_object
+    return -1
 
-def _independent(index, clause_list, code_object, meta_data, back_end):
+def _independent(index, clause_list, intermediate_rep, meta_data, back_end):
     """
     The 'independent' clause tells the implementation that the iterations of
     this loop are data-independent with respect to each other. This allows
@@ -347,9 +331,9 @@ def _independent(index, clause_list, code_object, meta_data, back_end):
           that any other iteration also writes or reads, except for
           variables in a 'reduction' clause or accesses in atomic regions.
     """
-    return -1, code_object
+    return -1
 
-def _private(index, clause_list, code_object, meta_data, back_end):
+def _private(index, clause_list, intermediate_rep, meta_data, back_end):
     """
     The 'private' clause on a 'loop' construct specifies that a copy of each
     item in var-list will be created. If the body of the loop is executed
@@ -361,9 +345,9 @@ def _private(index, clause_list, code_object, meta_data, back_end):
     for and shared across the set of threads associated with all the vector
     lanes of all the workers of each gang.
     """
-    return -1, code_object
+    return -1
 
-def _reduction(index, clause_list, code_object, meta_data, back_end):
+def _reduction(index, clause_list, intermediate_rep, meta_data, back_end):
     """
     The 'reduction' clause specifies a reduction operator and one or more
     scalar variables. For each reduction variable, a private copy is created
@@ -393,4 +377,4 @@ def _reduction(index, clause_list, code_object, meta_data, back_end):
           listed in in Section 2.5.11 reduction clause also apply to a
           'reduction' clause on a loop construct.
     """
-    return -1, code_object
+    return -1

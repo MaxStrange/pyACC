@@ -1,11 +1,11 @@
 """
-This is a class for visiting ASTs and collecting information on loops.
+This module contains the 'collapse' clause's AST visitor for the 'loop' construct.
 """
 import ast
 from acc.frontend.util.util import get_variables_from_source
 from acc.frontend.util.util import left_strip_src
 
-class loop_visitor(ast.NodeVisitor):
+class CollapseVisitor(ast.NodeVisitor):
     """
     This class gets all the loops in a batch of source code.
     """
@@ -41,8 +41,3 @@ class loop_visitor(ast.NodeVisitor):
             self.loop_vars = get_variables_from_source(ls_for_src)
 
         ast.NodeVisitor.generic_visit(self, node)
-
-
-
-
-
