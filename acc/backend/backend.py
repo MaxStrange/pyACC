@@ -48,8 +48,7 @@ def for_loop(code_object, meta_data):
     new_region_src = " " * 4 + "return x * x" + os.linesep
     execute_signature = "ls"
     execute_src = " " * 4 + "p = Pool(5)" + os.linesep
-    execute_src += " " * 4 + "return p.map(task, " + execute_signature + ")" +\
-            os.linesep
+    execute_src += " " * 4 + "return p.map(task, " + execute_signature + ")" + os.linesep
     #-------------------------------------------------------------------
 
     new_src = "from multiprocessing import Pool" + os.linesep

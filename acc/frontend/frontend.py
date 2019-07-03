@@ -14,11 +14,11 @@ def parse_pragmas(src, *args, **kwargs):
     given in `src`.
     """
     regexp = re.compile(r"^((\s)*#(\s)*(pragma)(\s)*(acc))")
-    for line in src.splitlines():
+    for lineno, line in enumerate(src.splitlines()):
         if regexp.match(line):
-            yield line
+            yield line, lineno
 
-def accumulate_pragma(intermediate_rep, pragma, *args, **kwargs):
+def accumulate_pragma(intermediate_rep, pragma, lineno, *args, **kwargs):
     """
     Modifies `intermediate_rep` according to `pragma`.
     """
@@ -26,9 +26,9 @@ def accumulate_pragma(intermediate_rep, pragma, *args, **kwargs):
     directive_and_clauses = [word for word in directive_and_clauses if word != '']
     directive = directive_and_clauses[0]
     clause_list = directive_and_clauses[1:]
-    _accumulate_pragma_helper(directive, clause_list, intermediate_rep, *args, **kwargs)
+    _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, *args, **kwargs)
 
-def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, *args, **kwargs):
+def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, *args, **kwargs):
     """
     Applies the given directive and its associated clause list
     to the given intermediate_rep.
@@ -44,7 +44,7 @@ def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, *args, *
     elif directive == "host_data":
         pass
     elif directive == "loop":
-        loop(clause_list, intermediate_rep, *args, **kwargs)
+        loop(clause_list, intermediate_rep, lineno, *args, **kwargs)
     elif directive == "atomic":
         pass
     elif directive == "cache":

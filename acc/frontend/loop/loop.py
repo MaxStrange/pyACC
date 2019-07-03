@@ -14,8 +14,8 @@ class LoopNode(IrNode):
     """
     Node for the IntermediateRepresentation tree that is used for loop constructs.
     """
-    def __init__(self):
-        super().__init__()
+    def __init__(self, lineno: int):
+        super().__init__(lineno)
         self.collapse = None
         self.gang = None
         self.worker = None
@@ -28,7 +28,7 @@ class LoopNode(IrNode):
         self.private = None
         self.reduction = None
 
-def loop(clauses, intermediate_rep, *args, **kwargs):
+def loop(clauses, intermediate_rep, lineno, *args, **kwargs):
     """
     From the docs:
     The loop construct can describe what type of parallelism to use to
@@ -65,26 +65,31 @@ def loop(clauses, intermediate_rep, *args, **kwargs):
       clause must be written such that the loop iteration count is
       computable when entering the loop construct.
     """
-    loop_node = LoopNode()
-    intermediate_rep.root.add_child(loop_node)
+    loop_node = LoopNode(lineno)
     index = 0
     while index != -1:
-        index = _apply_clause(index, clauses, intermediate_rep)
+        index = _apply_clause(index, clauses, intermediate_rep, loop_node)
+    intermediate_rep.add_child(loop_node)
 
-def _apply_clause(index, clause_list, intermediate_rep):
+def _apply_clause(index, clause_list, intermediate_rep, loop_node):
     """
     Consumes however much of the clause list as necessary to apply the clause
     found at index in the clause_list.
 
-    @param index:       The index into the clause_list of the clause we are
-                        interested in.
+    @param index:               The index into the clause_list of the clause we are
+                                interested in.
 
-    @param clause_list: The list of the clauses that this clause is indexed in.
+    @param clause_list:         The list of the clauses that this clause is indexed in.
 
-    @return:            The new index. If there are no more
-                        clauses after this one is done, index will be -1.
+    @param intermediate_rep:    The intermediate representation, filled with information
+                                about the source code in general, but not yet this node.
+
+    @param loop_node:           The node who's information we are filling in with the clauses.
+
+    @return:                    The new index. If there are no more
+                                clauses after this one is done, index will be -1.
     """
-    args = (index, clause_list, intermediate_rep)
+    args = (index, clause_list, intermediate_rep, loop_node)
     clause = clause_list[index]
     # TODO: Remove this debug print
     print("clause:", clause)
@@ -111,11 +116,10 @@ def _apply_clause(index, clause_list, intermediate_rep):
     elif clause.startswith("reduction"):
         return _reduction(*args)
     else:
-        raise InvalidClauseError("Clause either not allowed for this " +\
-                "directive, or else it may be spelled " +\
-                "incorrectly. Clause given: " + clause)
+        errmsg = "Clause either not allowed for this directive, or else it may be spelled incorrectly. Clause given: {} at line: {}".format(clause, loop_node.lineno)
+        raise InvalidClauseError(errmsg)
 
-def _collapse(index, clause_list, intermediate_rep):
+def _collapse(index, clause_list, intermediate_rep, loop_node):
     """
     The 'collapse' clause is used to specify how many tightly nested loops
     are associated with the 'loop' construct. The argument to the 'collapse'
@@ -158,7 +162,7 @@ def _collapse(index, clause_list, intermediate_rep):
 
     return -1
 
-def _gang(index, clause_list, intermediate_rep):
+def _gang(index, clause_list, intermediate_rep, loop_node):
     """
     When the parent compute construct is a 'parallel' construct, or on an
     orphaned 'loop' construct, the 'gang' clause specifies that the
@@ -199,7 +203,7 @@ def _gang(index, clause_list, intermediate_rep):
     """
     return -1
 
-def _worker(index, clause_list, intermediate_rep):
+def _worker(index, clause_list, intermediate_rep, loop_node):
     """
     When the parent compute construct is a 'parallel' construct, or on an
     orphaned 'loop' construct, the 'worker' clause specifies that the
@@ -227,7 +231,7 @@ def _worker(index, clause_list, intermediate_rep):
     """
     return -1
 
-def _vector(index, clause_list, intermediate_rep):
+def _vector(index, clause_list, intermediate_rep, loop_node):
     """
     When the parent compute construct is a 'parallel' construct, or on an
     orphaned 'loop' construct, the 'vector' clause specifies that the
@@ -256,7 +260,7 @@ def _vector(index, clause_list, intermediate_rep):
     """
     return -1
 
-def _seq(index, clause_list, intermediate_rep):
+def _seq(index, clause_list, intermediate_rep, loop_node):
     """
     The 'seq' clause specifies that the associated loop or loops are to be
     executed sequentially by the acclerator. This clause will override any
@@ -264,7 +268,7 @@ def _seq(index, clause_list, intermediate_rep):
     """
     return -1
 
-def _auto(index, clause_list, intermediate_rep):
+def _auto(index, clause_list, intermediate_rep, loop_node):
     """
     The 'auto' clause specifies that the implementation must analyze the
     loop and determine whether to run the loop sequentially. The
@@ -276,7 +280,7 @@ def _auto(index, clause_list, intermediate_rep):
     """
     return -1
 
-def _tile(index, clause_list, intermediate_rep):
+def _tile(index, clause_list, intermediate_rep, loop_node):
     """
     The 'tile' clause specifies that the implementation should split each
     loop nest into two loops, with an outer set of tile loops and an
@@ -303,14 +307,14 @@ def _tile(index, clause_list, intermediate_rep):
     """
     return -1
 
-def _device_type(index, clause_list, intermediate_rep):
+def _device_type(index, clause_list, intermediate_rep, loop_node):
     """
     The 'device_type' clause is described in Section 2.4 Device-Specific
     Clauses.
     """
     return -1
 
-def _independent(index, clause_list, intermediate_rep):
+def _independent(index, clause_list, intermediate_rep, loop_node):
     """
     The 'independent' clause tells the implementation that the iterations of
     this loop are data-independent with respect to each other. This allows
@@ -327,7 +331,7 @@ def _independent(index, clause_list, intermediate_rep):
     """
     return -1
 
-def _private(index, clause_list, intermediate_rep):
+def _private(index, clause_list, intermediate_rep, loop_node):
     """
     The 'private' clause on a 'loop' construct specifies that a copy of each
     item in var-list will be created. If the body of the loop is executed
@@ -341,7 +345,7 @@ def _private(index, clause_list, intermediate_rep):
     """
     return -1
 
-def _reduction(index, clause_list, intermediate_rep):
+def _reduction(index, clause_list, intermediate_rep, loop_node):
     """
     The 'reduction' clause specifies a reduction operator and one or more
     scalar variables. For each reduction variable, a private copy is created

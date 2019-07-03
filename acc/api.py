@@ -65,9 +65,9 @@ def acc():
             meta_data = MetaVars(src=source, stackframe=stackframe, signature=signature, funcs_name=funcname, funcs_module=module)
 
             intermediate_rep = IntermediateRepresentation(meta_data)
-            for pragma in frontend.parse_pragmas(intermediate_rep.src, *args, **kwargs):
+            for pragma, linenumber in frontend.parse_pragmas(intermediate_rep.src, *args, **kwargs):
                 # Side-effect-y: this function modifies intermediate_rep each time
-                frontend.accumulate_pragma(intermediate_rep, pragma, *args, **kwargs)
+                frontend.accumulate_pragma(intermediate_rep, pragma, linenumber, *args, **kwargs)
 
             # Pass the intermediate representation into the backend to get the new source code
             new_source = back.compile(intermediate_rep)
