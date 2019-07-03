@@ -43,6 +43,10 @@ def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, 
         pass
     elif directive == "data":
         pass
+    elif directive == "enter":  # enter data
+        pass
+    elif directive == "exit":   # exit data
+        pass
     elif directive == "host_data":
         pass
     elif directive == "loop":
