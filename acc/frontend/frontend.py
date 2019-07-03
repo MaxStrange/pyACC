@@ -51,9 +51,9 @@ def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, 
         pass
     elif directive == "loop":
         loop(clause_list, intermediate_rep, lineno, *args, **kwargs)
-    elif directive == "atomic":
-        pass
     elif directive == "cache":
+        pass
+    elif directive == "atomic":
         pass
     elif directive == "declare":
         pass
