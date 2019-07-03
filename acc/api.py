@@ -49,6 +49,7 @@ def acc():
                     getattr(back, "compile")
                 except AttributeError:
                     raise ImportError("Back end does not have a 'compile' function.")
+
             # Grab the source code from the decorated function
             source = dill.source.getsource(func)
 
@@ -63,10 +64,10 @@ def acc():
             module = sys.modules[func.__module__]
             meta_data = MetaVars(src=source, stackframe=stackframe, signature=signature, funcs_name=funcname, funcs_module=module)
 
-            intermediate_rep = IntermediateRepresentation(src=meta_data.src)
-            for pragma in frontend.parse_pragmas(meta_data, *args, **kwargs):
+            intermediate_rep = IntermediateRepresentation(meta_data)
+            for pragma in frontend.parse_pragmas(intermediate_rep.src, *args, **kwargs):
                 # Side-effect-y: this function modifies intermediate_rep each time
-                frontend.accumulate_pragma(intermediate_rep, pragma, meta_data, *args, **kwargs)
+                frontend.accumulate_pragma(intermediate_rep, pragma, *args, **kwargs)
 
             # Pass the intermediate representation into the backend to get the new source code
             new_source = back.compile(intermediate_rep)

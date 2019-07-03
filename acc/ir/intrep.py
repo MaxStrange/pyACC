@@ -7,10 +7,29 @@ about which particular backend it is using (the backend is passed into the
 frontend as an argument).
 """
 
-class Node:
+class IrNode:
     """
-    IntermediateRepresentation tree node.
+    IntermediateRepresentation tree node. Base class for all types
+    of Nodes.
     """
+    def __init__(self, children=None):
+        if children is None:
+            self.children = []
+        else:
+            self.children = children
+
+    def add_child(self, child):
+        """
+        Adds `child` to this IrNode's list of children.
+        """
+        self.children.append(child)
+
+class AccNode(IrNode):
+    """
+    The root of an IntermediateRepresentation tree.
+    """
+    def __init__(self):
+        super().__init__()
 
 class IntermediateRepresentation:
     """
@@ -25,6 +44,9 @@ class IntermediateRepresentation:
 
     # TODO: Give an example
     """
-    def __init__(self, src: str):
-        self.src = src
-        self.root = None
+    def __init__(self, meta_data):
+        """
+        """
+        self.meta_data = meta_data
+        self.src = meta_data.src
+        self.root = AccNode()

@@ -8,17 +8,17 @@ from acc.frontend.loop.loop import loop
 import asttokens
 import re
 
-def parse_pragmas(meta_data, *args, **kwargs):
+def parse_pragmas(src, *args, **kwargs):
     """
     Generator that yields pragmas one at a time from the function
-    given in meta_data.
+    given in `src`.
     """
-    regexp = re.compile("^((\s)*#(\s)*(pragma)(\s)*(acc))")
-    for line in meta_data.src.splitlines():
+    regexp = re.compile(r"^((\s)*#(\s)*(pragma)(\s)*(acc))")
+    for line in src.splitlines():
         if regexp.match(line):
             yield line
 
-def accumulate_pragma(intermediate_rep, pragma, meta_data, backend, *args, **kwargs):
+def accumulate_pragma(intermediate_rep, pragma, *args, **kwargs):
     """
     Modifies `intermediate_rep` according to `pragma`.
     """
@@ -26,12 +26,12 @@ def accumulate_pragma(intermediate_rep, pragma, meta_data, backend, *args, **kwa
     directive_and_clauses = [word for word in directive_and_clauses if word != '']
     directive = directive_and_clauses[0]
     clause_list = directive_and_clauses[1:]
-    _apply_pragma_helper(directive, clause_list, intermediate_rep, meta_data, backend, *args, **kwargs)
+    _accumulate_pragma_helper(directive, clause_list, intermediate_rep, *args, **kwargs)
 
-def _apply_pragma_helper(directive, clause_list, intermediate_rep, meta_data, backend, *args, **kwargs):
+def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, *args, **kwargs):
     """
     Applies the given directive and its associated clause list
-    to the given intermediate_rep (with the help of the meta_data).
+    to the given intermediate_rep.
     Modifies intermediate_rep in place.
     """
     # TODO: This is the main batch of work that needs to get done to make this compliant with the OpenACC standard
@@ -44,7 +44,7 @@ def _apply_pragma_helper(directive, clause_list, intermediate_rep, meta_data, ba
     elif directive == "host_data":
         pass
     elif directive == "loop":
-        loop(clause_list, meta_data, backend, intermediate_rep, *args, **kwargs)
+        loop(clause_list, intermediate_rep, *args, **kwargs)
     elif directive == "atomic":
         pass
     elif directive == "cache":
