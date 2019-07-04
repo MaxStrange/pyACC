@@ -67,5 +67,7 @@ def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, 
         pass
     elif directive == "wait":
         pass
+    elif directive == "routine":
+        pass
     else:
         raise ValueError("Unrecognized construct or directive:", directive)
