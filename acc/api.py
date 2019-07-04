@@ -290,3 +290,414 @@ def wait(i: int) -> None:
     Section 2.16.3.
     """
     pass
+
+def wait_async(w: int, a: int) -> None:
+    """
+    Description
+    -----------
+    The arguments must be async-arguments, as defined in Section 2.16.1 async clause.
+    The routine will enqueue a wait operation on the appropriate device queue associated with the
+    second argument, which will wait for operations enqueued on the device queue associated with
+    the first argument. See Section 2.16 Asynchronous Behavior for more information. A call to
+    acc_wait_async is functionally equivalent to a wait directive with a matching wait argument
+    and a matching async argument, as described in Section 2.16.3.
+    """
+    pass
+
+def wait_all() -> None:
+    """
+    Description
+    -----------
+    The acc_wait_all routine will not return until all the asynchronous operations
+    have completed. If two or more threads share the same accelerator, the acc_wait_all routine
+    will return only if all asynchronous operations initiated by this thread have completed; there is no
+    guarantee that all asynchronous operations initiated by other threads have completed. For com2393 patibility with version 1.0, this routine may also be spelled acc_async_wait_all. A call to
+    acc_wait_all is functionally equivalent to a wait directive with no wait argument list and no
+    async argument, as described in Section 2.16.3.
+    """
+    pass
+
+def wait_all_async(i: int) -> None:
+    """
+    Description
+    -----------
+    The argument must be an async-argument as defined in Section 2.16.1 async clause.
+    The routine will enqueue a wait operation on the appropriate device queue for each other device
+    queue. See Section 2.16 Asynchronous Behavior for more information. A call to acc_wait_all_async
+    is functionally equivalent to a wait directive with no wait argument list and a matching async
+    argument, as described in Section 2.16.3.
+    """
+    pass
+
+def get_default_async() -> int:
+    """
+    Description
+    -----------
+    The acc_get_default_async routine returns the value of
+    acc-default-async-var for the current thread, which is the asynchronous queue used when an async clause appears
+    without an async-argument or with the value acc_async_noval.
+    """
+    pass
+
+def set_default_async(i: int) -> None:
+    """
+    Description
+    -----------
+    The acc_set_default_async routine tells the runtime to place any directives
+    with an async clause that does not have an async-argument or with the special acc_async_noval
+    value into the specified asynchronous activity queue instead of the default asynchronous activity
+    queue for that device by setting the value of acc-default-async-var for the current thread. The
+    special argument acc_async_default will reset the default asynchronous activity queue to the
+    initial value, which is implementation-defined. A call to acc_set_default_async is
+    functionally equivalent to a set default_async directive with a matching argument in int-expr, as
+    described in Section 2.14.3.
+    """
+    pass
+
+def on_device(devtype: str) -> int:
+    """
+    Description
+    -----------
+    The acc_on_device routine may be used to execute different paths
+    depending on whether the code is running on the host or on some accelerator. If the acc_on_device
+    routine has a compile-time constant argument, it evaluates at compile time to a constant. The
+    argument must be one of the defined accelerator types. If the argument is acc_device_host,
+    then outside of a compute region or accelerator routine, or in a compute region or accelerator
+    routine that is executed on the host CPU, this routine will evaluate to nonzero for C or C++, and
+    .true. for Fortran; otherwise, it will evaluate to zero for C or C++, and .false. for Fortran.
+    If the argument is acc_device_not_host, the result is the negation of the result with
+    argument acc_device_host. If the argument is an accelerator device type, then in a compute region
+    or routine that is executed on a device of that type, this routine will evaluate to nonzero for C or
+    C++, and .true. for Fortran; otherwise, it will evaluate to zero for C or C++, and .false. for
+    Fortran. The result with argument acc_device_default is undefined.
+    """
+    pass
+
+def malloc(nbytes: int):
+    """
+    Description
+    -----------
+    The acc_malloc routine may be used to allocate space in the current device
+    memory. Pointers assigned from this function may be used in deviceptr clauses to tell the
+    compiler that the pointer target is resident on the device. In case of an error, acc_malloc returns
+    a NULL pointer.
+    """
+    pass
+
+def free():
+    """
+    Description
+    -----------
+    The acc_free routine will free previously allocated space in the current device
+    memory; the argument should be a pointer value that was returned by a call to acc_malloc. If
+    the argument is a NULL pointer, no operation is performed.
+    """
+    pass
+
+def copyin(buf, size):
+    """
+    Description
+    -----------
+    The acc_copyin routines are equivalent to the enter data directive with a
+    copyin clause, as described in Section 2.7.6. In C, the arguments are a pointer to the data and
+    length in bytes; the synchronous function returns a pointer to the allocated device memory, as with
+    acc_malloc. In Fortran, two forms are supported. In the first, the argument is a contiguous array
+    section of intrinsic type. In the second, the first argument is a variable or array element and the
+    second is the length in bytes.
+    The behavior of the acc_copyin routines is:
+    • If the data is in shared memory, no action is taken. The C acc_copyin returns the incoming
+    pointer.
+    • If the data is present in the current device memory, a present increment action with the
+    dynamic reference counter is performed. The C acc_copyin returns a pointer to the existing
+    device memory.
+    • Otherwise, a copyin action with the appropriate reference counter is performed. The C
+    acc_copyin returns the device address of the newly allocated memory.
+    This data may be accessed using the present data clause. Pointers assigned from the C acc_copyin
+    function may be used in deviceptr clauses to tell the compiler that the pointer target is resident
+    on the device.
+    The _async versions of this function will perform any data transfers asynchronously on the async
+    queue associated with the value passed in as the async argument. The function may return
+    before the data has been transferred; see Section 2.16 Asynchronous Behavior for more details. The
+    synchronous versions will not return until the data has been completely transferred.
+    For compatibility with OpenACC 2.0, acc_present_or_copyin and acc_pcopyin are
+    alternate names for acc_copyin.
+    """
+    pass
+
+def create():
+    """
+    Description
+    -----------
+    The acc_create routines are equivalent to the enter data directive with a
+    create clause, as described in Section 2.7.8. In C, the arguments are a pointer to the data and
+    length in bytes; the synchronous function returns a pointer to the allocated device memory, as with
+    acc_malloc. In Fortran, two forms are supported. In the first, the argument is a contiguous array
+    section of intrinsic type. In the second, the first argument is a variable or array element and the
+    second is the length in bytes.
+
+    The behavior of the acc_create routines is:
+    • If the data is in shared memory, no action is taken. The C acc_create returns the incoming
+    pointer.
+    • If the data is present in the current device memory, a present increment action with the
+    dynamic reference counter is performed. The C acc_create returns a pointer to the existing
+    device memory.
+    • Otherwise, a create action with the appropriate reference counter is performed. The C acc_create
+    returns the device address of the newly allocated memory.
+    This data may be accessed using the present data clause. Pointers assigned from the C acc_copyin
+    function may be used in deviceptr clauses to tell the compiler that the pointer target is resident
+    on the device.
+    The _async versions of these function may perform the data allocation asynchronously on the
+    async queue associated with the value passed in as the async argument. The synchronous versions
+    will not return until the data has been allocated.
+    For compatibility with OpenACC 2.0, acc_present_or_create and acc_pcreate are
+    alternate names for acc_create.
+    """
+    pass
+
+def copyout():
+    """
+    Description
+    -----------
+    The acc_copyout routines are equivalent to the exit data directive with a
+    copyout clause, and the acc_copyout_finalize routines are equivalent to the exit data
+    directive with both copyout and finalize clauses, as described in Section 2.7.7. In C, the
+    arguments are a pointer to the data and length in bytes. In Fortran, two forms are supported. In the
+    first, the argument is a contiguous array section of intrinsic type. In the second, the first argument
+    is a variable or array element and the second is the length in bytes.
+
+    The behavior of the acc_copyout routines is:
+    • If the data is in shared memory, no action is taken.
+    • Otherwise, if the data is not present in the current device memory, a runtime error is issued.
+    • Otherwise, a present decrement action with the dynamic reference counter is performed (acc_copyout),
+    or the dynamic reference counter is set to zero (acc_copyout_finalize). If both
+    reference counters are then zero, a copyout action is performed.
+
+    The _async versions of these functions will perform any associated data transfers asynchronously
+    on the async queue associated with the value passed in as the async argument. The function may
+    return before the data has been transferred or deallocated; see Section 2.16 Asynchronous Behavior
+    for more details. The synchronous versions will not return until the data has been completely
+    transferred. Even if the data has not been transferred or deallocated before the function returns, the data
+    will be treated as not present in the current device memory.
+    """
+    pass
+
+def delete():
+    """
+    Description
+    -----------
+    The acc_delete routines are equivalent to the exit data directive with a
+    delete clause,
+    and the acc_delete_finalize routines are equivalent to the exit data directive with both
+    delete clause and finalize clauses, as described in Section 2.7.10. The arguments are as for
+    acc_copyout.
+
+    The behavior of the acc_delete routines is:
+    • If the data is in shared memory, no action is taken.
+    • Otherwise, if the data is not present in the current device memory, a runtime error is issued.
+    • Otherwise, a present decrement action with the dynamic reference counter is performed (acc_delete),
+    or the dynamic reference counter is set to zero (acc_delete_finalize). If both
+    reference counters are then zero, a delete action is performed.
+
+    The _async versions of these function may perform the data deallocation asynchronously on the
+    async queue associated with the value passed in as the async argument. The synchronous versions
+    will not return until the data has been deallocated. Even if the data has not been deallocated before
+    the function returns, the data will be treated as not present in the current device memory.
+    """
+    pass
+
+def update_device():
+    """
+    Description
+    -----------
+    The acc_update_device routine is equivalent to the update directive with a
+    device clause, as described in Section 2.14.4. In C, the arguments are a pointer to the data and
+    length in bytes. In Fortran, two forms are supported. In the first, the argument is a contiguous array
+    section of intrinsic type. In the second, the first argument is a variable or array element and the
+    second is the length in bytes. For data not in shared memory, the data in the local memory is copied
+    to the corresponding device memory. It is a runtime error to call this routine if the data is not present
+    in the current device memory.
+
+    The _async versions of this function will perform the data transfers asynchronously on the async
+    queue associated with the value passed in as the async argument. The function may return
+    before the data has been transferred; see Section 2.16 Asynchronous Behavior for more details. The
+    synchronous versions will not return until the data has been completely transferred.
+    """
+    pass
+
+def update_self():
+    """
+    Description
+    -----------
+    The acc_update_self routine is equivalent to the update directive with a
+    self clause, as described in Section 2.14.4. In C, the arguments are a pointer to the data and
+    length in bytes. In Fortran, two forms are supported. In the first, the argument is a contiguous array
+    section of intrinsic type. In the second, the first argument is a variable or array element and the
+    second is the length in bytes. For data not in shared memory, the data in the local memory is copied
+    to the corresponding device memory. There must be a device copy of the data on the device when
+    calling this routine, otherwise no action is taken by the routine. It is a runtime error to call this
+    routine if the data is not present in the current device memory.
+
+    The _async versions of this function will perform the data transfers asynchronously on the async
+    queue associated with the value passed in as the async argument. The function may return
+    before the data has been transferred; see Section 2.16 Asynchronous Behavior for more details. The
+    synchronous versions will not return until the data has been completely transferred.
+    """
+    pass
+
+def map_data():
+    """
+    Description
+    -----------
+    The acc_map_data routine is similar to an enter data directive with a create
+    clause, except instead of allocating new device memory to start a data lifetime, the device address
+    to use for the data lifetime is specified as an argument. The first argument is a host address,
+    followed by the corresponding device address and the data length in bytes. After this call, when the
+    host data appears in a data clause, the specified device memory will be used. It is an error to call
+    acc_map_data for host data that is already present in the current device memory. It is undefined
+    to call acc_map_data with a device address that is already mapped to host data. The device
+    address may be the result of a call to acc_malloc, or may come from some other device-specific
+    API routine. After mapping the device memory, the dynamic reference count for the host data is set
+    to one, but no data movement will occur. Memory mapped by acc_map_data may not have the
+    associated dynamic reference count decremented to zero, except by a call to acc_unmap_data.
+    See Section 2.6.6 Reference Counters.
+    """
+    pass
+
+def unmap_data():
+    """
+    Description
+    -----------
+    The acc_unmap_data routine is similar to an exit data directive with a
+    delete clause, except the device memory is not deallocated. The argument is pointer to the host
+    data. A call to this routine ends the data lifetime for the specified host data. The device memory is
+    not deallocated. It is undefined behavior to call acc_unmap_data with a host address unless that
+    host address was mapped to device memory using acc_map_data. After unmapping memory the
+    dynamic reference count for the pointer is set to zero, but no data movement will occur. It is an
+    error to call acc_unmap_data if the structured reference count for the pointer is not zero. See
+    Section 2.6.6 Reference Counters.
+    """
+    pass
+
+def deviceptr():
+    """
+    Description
+    -----------
+    The acc_deviceptr routine returns the device pointer associated with a host
+    address. The argument is the address of a host variable or array that has an active lifetime on the
+    current device. If the data is not present in the current device memory, the routine returns a NULL
+    value.
+    """
+    pass
+
+def hostptr():
+    """
+    Description
+    -----------
+    The acc_hostptr routine returns the host pointer associated with a device
+    address. The argument is the address of a device variable or array, such as that returned from acc_deviceptr,
+    acc_create or acc_copyin. If the device address is NULL, or does not correspond to any host
+    address, the routine returns a NULL value
+    """
+    pass
+
+def is_present():
+    """
+    Description
+    -----------
+    The acc_is_present routine tests whether the specified host data is accessible
+    from the current device. In C, the arguments are a pointer to the data and length in bytes; the
+    function returns nonzero if the specified data is fully present, and zero otherwise. In Fortran, two
+    forms are supported. In the first, the argument is a contiguous array section of intrinsic type. In the
+    second, the first argument is a variable or array element and the second is the length in bytes. The
+    function returns .true. if the specified data is in shared memory or is fully present, and .false.
+    otherwise. If the byte length is zero, the function returns nonzero in C or .true. in Fortran if the
+    given address is in shared memory or is present at all in the current device memory.
+    """
+    pass
+
+def memcpy_to_device():
+    """
+    Description
+    -----------
+    The acc_memcpy_to_device routine copies bytes of data from the local
+    address in src to the device address in dest. The destination address must be an address accessible
+    from the current device, such as an address returned from acc_malloc or acc_deviceptr, or
+    an address in shared memory.
+
+    The _async version of this function will perform the data transfers asynchronously on the async
+    queue associated with the value passed in as the async argument. The function may return
+    before the data has been transferred; see Section 2.16 Asynchronous Behavior for more details. The
+    synchronous versions will not return until the data has been completely transferred.
+    """
+    pass
+
+def memcpy_from_device():
+    """
+    Description
+    -----------
+    The acc_memcpy_from_device routine copies bytes data from the device
+    address in src to the local address in dest. The source address must be an address accessible
+    from the current device, such as an addressed returned from acc_malloc or acc_deviceptr,
+    or an address in shared memory.
+
+    The _async version of this function will perform the data transfers asynchronously on the async
+    queue associated with the value passed in as the async argument. The function may return
+    before the data has been transferred; see Section 2.16 Asynchronous Behavior for more details. The
+    synchronous versions will not return until the data has been completely transferred.
+    """
+    pass
+
+def memcpy_device():
+    """
+    Description
+    -----------
+    The acc_memcpy_device routine copies bytes data from the device address
+    in src to the device address in dest. Both addresses must be addresses in the current device
+    memory, such as would be returned from acc_malloc or acc_deviceptr. If dest and src
+    overlap, the behavior is undefined.
+
+    The _async version of this function will perform the data transfers asynchronously on the async
+    queue associated with the value passed in as the async argument. The function may return
+    before the data has been transferred; see Section 2.16 Asynchronous Behavior for more details. The
+    synchronous versions will not return until the data has been completely transferred.
+    """
+    pass
+
+def attach():
+    """
+    Description
+    -----------
+    The acc_attach routines are passed the address of a host pointer. If the data is
+    in shared memory, or if the pointer *ptr is in shared memory or is not present in the current device
+    memory, or the address to which the *ptr points is not present in the current device memory, no
+    action is taken. Otherwise, these routines perform the attach action (Section 2.7.2).
+    These routines may issue a data transfer from local memory to device memory. The _async
+    version of this function will perform the data transfers asynchronously on the async queue associated
+    with the value passed in as the async argument. The function may return before the data has been
+    transferred; see Section 2.16 Asynchronous Behavior for more details. The synchronous version
+    will not return until the data has been completely transferred.
+    """
+    pass
+
+def detach():
+    """
+    Description
+    -----------
+    The acc_detach routines are passed the address of a host pointer. If the data is
+    in shared memory, or if the pointer *ptr is in shared memory or is not present in the current device
+    memory, if the attachment counter for the pointer *ptr is zero, no action is taken. Otherwise, these
+    routines perform the detach action (Section 2.7.2).
+
+    The acc_detach_finalize routines are equivalent to an exit data directive with detach
+    and finalize clauses, as described in Section 2.7.12 detach clause. If the data is in shared
+    memory,or if the pointer *ptr is not present in the current device memory, or if the attachment
+    counter for the pointer *ptr is zero, no action is taken. Otherwise, these routines perform the
+    immediate detach action (Section 2.7.2).
+
+    These routines may issue a data transfer from local memory to device memory. The _async
+    versions of these functions will perform the data transfers asynchronously on the async queue
+    associated with the value passed in as the async argument. These functions may return before the data
+    has been transferred; see Section 2.16 Asynchronous Behavior for more details. The synchronous
+    versions will not return until the data has been completely transferred.
+    """
+    pass
