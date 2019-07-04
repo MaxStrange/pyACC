@@ -351,7 +351,7 @@ def _reduction(index, clause_list, intermediate_rep, loop_node):
     ------------
     • A var in a reduction clause must be a scalar variable name, a composite variable name,
     an array name, an array element, or a subarray (refer to Section 2.7.1).
-    • Reduction clauses on nested constructs for the same reduction var must have the same reduc1581 tion operator.
+    • Reduction clauses on nested constructs for the same reduction var must have the same reduction operator.
     • The reduction clause may not appear on an orphaned loop construct with the gang
     clause, or on an orphaned loop construct that will generate gang parallelism in a procedure
     that is compiled with the routine gang clause.

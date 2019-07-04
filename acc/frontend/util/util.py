@@ -15,14 +15,9 @@ def compile_kernel_module(src):
     into the running Python program with a call to load_kernel_module.
     Returns the name of the module.
     """
-    if os.name == "nt":
-        with open("super_secret_file.py", 'w') as f:
-            f.write(src)
-        return "super_secret_file.py"
-    else:
-        tmpfile = tempfile.NamedTemporaryFile()
-        tmpfile.write(src.encode('utf8'))
-        return tmpfile.name
+    with open("super_secret_file.py", 'w') as f:
+        f.write(src)
+    return "super_secret_file.py"
 
 def load_kernel_module(fname):
     """
