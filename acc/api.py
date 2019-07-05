@@ -5,10 +5,10 @@ These two functions are the only API functions from an end-user's perspective.
 """
 import acc.frontend.util.util as util
 import acc.frontend.frontend as frontend
-from acc.ir.metavars import MetaVars
-from acc.ir.intrep import IntermediateRepresentation
+import acc.ir.metavars as metavars
+import acc.ir.intrep as intrep
 import dill
-from functools import wraps
+import functools
 import inspect
 import sys
 
@@ -39,7 +39,7 @@ def acc():
     function as is.
     """
     def decorate(func):
-        @wraps(func)
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
             global back
             if not back:
@@ -62,9 +62,9 @@ def acc():
             # Put together all the stuff we need in order to rewrite the function
             funcname = func.__name__
             module = sys.modules[func.__module__]
-            meta_data = MetaVars(src=source, stackframe=stackframe, signature=signature, funcs_name=funcname, funcs_module=module)
+            meta_data = metavars.MetaVars(src=source, stackframe=stackframe, signature=signature, funcs_name=funcname, funcs_module=module)
 
-            intermediate_rep = IntermediateRepresentation(meta_data)
+            intermediate_rep = intrep.IntermediateRepresentation(meta_data)
             for pragma, linenumber in frontend.parse_pragmas(intermediate_rep.src, *args, **kwargs):
                 # Side-effect-y: this function modifies intermediate_rep each time
                 frontend.accumulate_pragma(intermediate_rep, pragma, linenumber, *args, **kwargs)

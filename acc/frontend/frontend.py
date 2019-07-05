@@ -4,7 +4,8 @@ This is the front end's API.
 This module exposes all of the functions that should be used from the
 frontend by the acc module.
 """
-from acc.frontend.loop.loop import loop
+import acc.frontend.loop.loop as loop
+import acc.frontend.parallel.parallel as parallel
 import asttokens
 import re
 
@@ -36,7 +37,7 @@ def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, 
     """
     # TODO: This is the main batch of work that needs to get done to make this compliant with the OpenACC standard
     if directive  == "parallel":
-        pass
+        parallel.parallel(clause_list, intermediate_rep, lineno, *args, **kwargs)
     elif directive == "kernels":
         pass
     elif directive == "serial":
@@ -50,7 +51,7 @@ def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, 
     elif directive == "host_data":
         pass
     elif directive == "loop":
-        loop(clause_list, intermediate_rep, lineno, *args, **kwargs)
+        loop.loop(clause_list, intermediate_rep, lineno, *args, **kwargs)
     elif directive == "cache":
         pass
     elif directive == "atomic":
