@@ -12,3 +12,9 @@ class InvalidClauseError(Exception):
     something.
     """
     pass
+
+class VersionNotSupportedError(Exception):
+    """
+    Indicates that the version of Python is not supported.
+    """
+    pass

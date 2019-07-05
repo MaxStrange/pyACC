@@ -2,9 +2,10 @@
 This module provides a bunch of functions that are useful
 for the front end
 """
+import acc.frontend.util.errors as errors
 import ast
 import asttokens
-import importlib
+import importlib.util
 import inspect
 import os
 import sys
@@ -38,6 +39,9 @@ def load_kernel_module(fpath):
         spec = importlib.util.spec_from_file_location(fname, fpath)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
+    else:
+        raise errors.VersionNotSupportedError("Python Version 3.{} is not supported. Only 3.4 and above is supported.".format(minor))
+
     os.remove(fpath)
     return mod
 
