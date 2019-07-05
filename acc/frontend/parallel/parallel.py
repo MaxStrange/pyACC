@@ -1,7 +1,6 @@
+import acc.frontend.commonclauses as commonclauses
 import acc.ir.intrep as intrep
-import acc.frontend.util.errors as errors
-import acc.frontend.loop.loopvisitors as loopvisitors
-import acc.frontend.util.util as util
+import acc.frontend.loop.loop as loop
 import ast
 import asttokens
 
@@ -140,24 +139,10 @@ def _apply_clause(index, clause_list, intermediate_rep, loop_node):
     """
     args = (index, clause_list, intermediate_rep, loop_node)
     clause = clause_list[index]
-    if   clause.startswith("async"):
-        return _async(*args)
-    elif clause.startswith("wait"):
-        return _wait(*args)
-    elif clause.startswith("num_gangs"):
-        return _num_gangs(*args)
-    elif clause.startswith("num_workers"):
-        return _num_workers(*args)
-    elif clause.startswith("vector_length"):
-        return _vector_length(*args)
+    if   clause.startswith("loop"):
+        return _loop(*args)
     elif clause.startswith("device_type"):
         return _device_type(*args)
-    elif clause.startswith("if"):
-        return _if(*args)
-    elif clause.startswith("self"):
-        return _self(*args)
-    elif clause.startswith("reduction"):
-        return _reduction(*args)
     elif clause.startswith("copy"):
         return _copy(*args)
     elif clause.startswith("copyin"):
@@ -174,64 +159,31 @@ def _apply_clause(index, clause_list, intermediate_rep, loop_node):
         return _deviceptr(*args)
     elif clause.startswith("attach"):
         return _attach(*args)
-    elif clause.startswith("private"):
-        return _private(*args)
-    elif clause.startswith("firstprivate"):
-        return _firstprivate(*args)
-    elif clause.startswith("default"):
-        return _default(*args)
-    elif clause.startswith("loop"):
-        return _loop(*args)
     else:
-        errmsg = "Clause either not allowed for this directive, or else it may be spelled incorrectly. Clause given: {} at line: {}".format(clause, loop_node.lineno)
-        raise errors.InvalidClauseError(errmsg)
+        return commonclauses.apply_clause(*args)
 
-def _async(index, clause_list, intermediate_rep, parallel_node):
+def _loop(index, clause_list, intermediate_rep, parallel_node):
     """
-    """
-    return -1
+    A parallel construct can be combined with a loop construct by
+    the following:
 
-def _wait(index, clause_list, intermediate_rep, parallel_node):
-    """
-    """
-    return -1
+    `#pragma acc prallel loop etc`
 
-def _num_gangs(index, clause_list, intermediate_rep, parallel_node):
-    """
-    """
-    return -1
+    When this is done, it insinuates that the parallel region
+    is comprised of a single loop immediately following the pragma.
+    So add a loop node to the parallel node and finish parsing
+    as if we were parsing a loop node.
 
-def _num_workers(index, clause_list, intermediate_rep, parallel_node):
+    Once we return from this function, the parallel node will get
+    added to the IR tree, along with its child.
     """
-    """
-    return -1
-
-def _vector_length(index, clause_list, intermediate_rep, parallel_node):
-    """
-    """
-    return -1
-
-def _vector_length(index, clause_list, intermediate_rep, parallel_node):
-    """
-    """
-    return -1
+    loop_node = loop.LoopNode(parallel_node.lineno)
+    while index != -1:
+        index = loop._apply_clause(index + 1, clause_list, intermediate_rep, loop_node)
+    parallel_node.add_child(loop_node)
+    return index  # should be -1
 
 def _device_type(index, clause_list, intermediate_rep, parallel_node):
-    """
-    """
-    return -1
-
-def _if(index, clause_list, intermediate_rep, parallel_node):
-    """
-    """
-    return -1
-
-def _self(index, clause_list, intermediate_rep, parallel_node):
-    """
-    """
-    return -1
-
-def _reduction(index, clause_list, intermediate_rep, parallel_node):
     """
     """
     return -1
@@ -272,26 +224,6 @@ def _deviceptr(index, clause_list, intermediate_rep, parallel_node):
     return -1
 
 def _attach(index, clause_list, intermediate_rep, parallel_node):
-    """
-    """
-    return -1
-
-def _private(index, clause_list, intermediate_rep, parallel_node):
-    """
-    """
-    return -1
-
-def _firstprivate(index, clause_list, intermediate_rep, parallel_node):
-    """
-    """
-    return -1
-
-def _default(index, clause_list, intermediate_rep, parallel_node):
-    """
-    """
-    return -1
-
-def _loop(index, clause_list, intermediate_rep, parallel_node):
     """
     """
     return -1

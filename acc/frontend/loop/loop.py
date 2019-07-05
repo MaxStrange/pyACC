@@ -108,8 +108,6 @@ def _apply_clause(index, clause_list, intermediate_rep, loop_node):
     """
     args = (index, clause_list, intermediate_rep, loop_node)
     clause = clause_list[index]
-    # TODO: Remove this debug print
-    print("clause:", clause)
     if   clause.startswith("collapse"):
         return _collapse(*args)
     elif clause.startswith("gang"):

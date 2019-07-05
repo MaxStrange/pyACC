@@ -18,26 +18,21 @@ class CollapseVisitor(ast.NodeVisitor):
         type_name = type(node).__name__
 
         if type_name == "comprehension":
+            # TODO: We currently do not support parallelization of comprehensions
             pass
-
-            # TODO: There is a bug in the asttokens library
-            # it doesn't get the first part of the comprehension:
-            # it gets: "for _ in list" rather than "_ for _ in list"
-            #comp_src = self.atok.get_text(node)
-            #self.loop_code = "[" + comp_src + "]"
-            #ls_comp_src = "[" + left_strip_src(comp_src) + "]"
-            #print("===============================")
-            #print("comp_src: ", comp_src)
-            #print("===============================")
-            #self.loop_vars = get_variables_from_source(ls_comp_src)
-            ## TODO: Only get the most outer comprehension or loop
-            ## Do this by checking each one's atok.get_text_range
-            ## and making sure that none overlap.
-
         elif type_name == "For":
             for_src = self.atok.get_text(node)
             ls_for_src = left_strip_src(for_src)
             self.loop_code = ls_for_src
-            self.loop_vars = get_variables_from_source(ls_for_src)
+            self.loop_vars = list(set(get_variables_from_source(ls_for_src)))
+
+            print("Loop code:")
+            print("-----------------------")
+            print(self.loop_code)
+            print("-----------------------")
+            print("Loop vars:")
+            print("-----------------------")
+            print(self.loop_vars)
+            print("-----------------------")
 
         ast.NodeVisitor.generic_visit(self, node)
