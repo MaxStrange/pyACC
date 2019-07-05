@@ -21,10 +21,6 @@ def compile_kernel_module(src):
     tmp.write(src.encode('utf-8'))
     return tmp.name
 
-    #with open("super_secret_file.py", 'w') as f:
-    #    f.write(src)
-    #return "super_secret_file.py"
-
 def load_kernel_module(fpath):
     """
     Loads the given Python file into the running program as a module
