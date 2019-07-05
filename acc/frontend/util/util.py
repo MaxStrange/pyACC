@@ -4,8 +4,10 @@ for the front end
 """
 import ast
 import asttokens
+import importlib
 import inspect
 import os
+import sys
 import tempfile
 import types
 
@@ -15,17 +17,32 @@ def compile_kernel_module(src):
     into the running Python program with a call to load_kernel_module.
     Returns the name of the module.
     """
-    with open("super_secret_file.py", 'w') as f:
-        f.write(src)
-    return "super_secret_file.py"
+    tmp = tempfile.NamedTemporaryFile(suffix=".py", delete=False)
+    tmp.write(src.encode('utf-8'))
+    return tmp.name
 
-def load_kernel_module(fname):
+    #with open("super_secret_file.py", 'w') as f:
+    #    f.write(src)
+    #return "super_secret_file.py"
+
+def load_kernel_module(fpath):
     """
     Loads the given Python file into the running program as a module
     and returns it.
     """
-    mod = __import__(fname[:-3])
-    os.remove(fname)
+    fname = os.path.basename(fpath)
+
+    major, minor, _patch, _, _ = sys.version_info
+    assert major == 3, "PyACC only works in Python 3"
+
+    if minor == 3 or minor == 4:
+        loader = importlib.machinery.SourceFileLoader(fname, fpath)
+        mod = loader.load_module(fullname=fname)
+    elif minor > 4:
+        spec = importlib.util.spec_from_file_location(fname, fpath)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+    os.remove(fpath)
     return mod
 
 def get_function_names_from_source(src, ignore):

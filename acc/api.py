@@ -75,10 +75,10 @@ def acc():
             # Dump the source code that we created into a file
             oldmodulesource = dill.source.getsource(module)
             newmodulesource = oldmodulesource.replace(source, new_source.strip("@acc()"))
-            fname = util.compile_kernel_module(newmodulesource)
+            fpath = util.compile_kernel_module(newmodulesource)
 
             # Import the new module.
-            mod = util.load_kernel_module(fname)
+            mod = util.load_kernel_module(fpath)
 
             # Return the result of executing the newly written function.
             func_to_execute = getattr(mod, funcname)
