@@ -31,7 +31,7 @@ class ParallelNode(intrep.IrNode):
         self.firstprivate = None
         self.default = None
 
-def parallel(clauses, intermediate_rep, lineno, *args, **kwargs):
+def parallel(clauses, intermediate_rep, lineno, dbg, *args, **kwargs):
     """
     Summary
     -------
@@ -115,10 +115,10 @@ def parallel(clauses, intermediate_rep, lineno, *args, **kwargs):
     parallel_node = ParallelNode(lineno)
     index = 0
     while index != -1:
-        index = _apply_clause(index, clauses, intermediate_rep, parallel_node)
+        index = _apply_clause(index, clauses, intermediate_rep, parallel_node, dbg)
     intermediate_rep.add_child(parallel_node)
 
-def _apply_clause(index, clause_list, intermediate_rep, loop_node):
+def _apply_clause(index, clause_list, intermediate_rep, parallel_node, dbg):
     """
     Consumes however much of the clause list as necessary to apply the clause
     found at index in the clause_list.
@@ -131,13 +131,13 @@ def _apply_clause(index, clause_list, intermediate_rep, loop_node):
     @param intermediate_rep:    The intermediate representation, filled with information
                                 about the source code in general, but not yet this node.
 
-    @param loop_node:           The node who's information we are filling in with the clauses.
+    @param parallel_node:       The node who's information we are filling in with the clauses.
 
     @return:                    The new index. If there are no more
                                 clauses after this one is done, index will be -1.
 
     """
-    args = (index, clause_list, intermediate_rep, loop_node)
+    args = (index, clause_list, intermediate_rep, parallel_node, dbg)
     clause = clause_list[index]
     if   clause.startswith("loop"):
         return _loop(*args)
@@ -162,7 +162,7 @@ def _apply_clause(index, clause_list, intermediate_rep, loop_node):
     else:
         return commonclauses.apply_clause(*args)
 
-def _loop(index, clause_list, intermediate_rep, parallel_node):
+def _loop(index, clause_list, intermediate_rep, parallel_node, dbg):
     """
     A parallel construct can be combined with a loop construct by
     the following:
@@ -178,52 +178,59 @@ def _loop(index, clause_list, intermediate_rep, parallel_node):
     added to the IR tree, along with its child.
     """
     loop_node = loop.LoopNode(parallel_node.lineno)
-    while index != -1:
-        index = loop._apply_clause(index + 1, clause_list, intermediate_rep, loop_node)
-    parallel_node.add_child(loop_node)
-    return index  # should be -1
 
-def _device_type(index, clause_list, intermediate_rep, parallel_node):
+    index = index + 1 if index + 1 < len(clause_list) else -1
+    if index == -1:
+        parallel_node.add_child(loop_node)
+        return index
+    else:
+        while index != -1:
+            index = loop._apply_clause(index, clause_list, intermediate_rep, loop_node, dbg)
+        parallel_node.add_child(loop_node)
+        assert index == -1
+        return index
+
+def _device_type(index, clause_list, intermediate_rep, parallel_node, dbg):
     """
     """
     return -1
 
-def _copy(index, clause_list, intermediate_rep, parallel_node):
+def _copy(index, clause_list, intermediate_rep, parallel_node, dbg):
     """
     """
     return -1
 
-def _copyin(index, clause_list, intermediate_rep, parallel_node):
+def _copyin(index, clause_list, intermediate_rep, parallel_node, dbg):
     """
     """
     return -1
 
-def _copyout(index, clause_list, intermediate_rep, parallel_node):
+def _copyout(index, clause_list, intermediate_rep, parallel_node, dbg):
     """
     """
     return -1
 
-def _create(index, clause_list, intermediate_rep, parallel_node):
+def _create(index, clause_list, intermediate_rep, parallel_node, dbg):
     """
     """
     return -1
 
-def _no_create(index, clause_list, intermediate_rep, parallel_node):
+def _no_create(index, clause_list, intermediate_rep, parallel_node, dbg):
     """
     """
     return -1
 
-def _present(index, clause_list, intermediate_rep, parallel_node):
+def _present(index, clause_list, intermediate_rep, parallel_node, dbg):
     """
     """
     return -1
 
-def _deviceptr(index, clause_list, intermediate_rep, parallel_node):
+def _deviceptr(index, clause_list, intermediate_rep, parallel_node, dbg):
     """
     """
     return -1
 
-def _attach(index, clause_list, intermediate_rep, parallel_node):
+def _attach(index, clause_list, intermediate_rep, parallel_node, dbg):
     """
     """
     return -1

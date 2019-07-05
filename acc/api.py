@@ -3,6 +3,7 @@ The main accelerator decorator and load_back_end function.
 
 These two functions are the only API functions from an end-user's perspective.
 """
+import acc.frontend.util.errors as errors
 import acc.frontend.util.util as util
 import acc.frontend.frontend as frontend
 import acc.ir.metavars as metavars
@@ -65,9 +66,11 @@ def acc():
             meta_data = metavars.MetaVars(src=source, stackframe=stackframe, signature=signature, funcs_name=funcname, funcs_module=module)
 
             intermediate_rep = intrep.IntermediateRepresentation(meta_data)
+            dbg = errors.Debug(intermediate_rep)
             for pragma, linenumber in frontend.parse_pragmas(intermediate_rep.src, *args, **kwargs):
+                dbg.lineno = linenumber
                 # Side-effect-y: this function modifies intermediate_rep each time
-                frontend.accumulate_pragma(intermediate_rep, pragma, linenumber, *args, **kwargs)
+                frontend.accumulate_pragma(intermediate_rep, pragma, linenumber, dbg, *args, **kwargs)
 
             # Pass the intermediate representation into the backend to get the new source code
             new_source = back.compile(intermediate_rep)

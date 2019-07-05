@@ -29,7 +29,7 @@ def accumulate_pragma(intermediate_rep, pragma, lineno, *args, **kwargs):
     clause_list = directive_and_clauses[1:]
     _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, *args, **kwargs)
 
-def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, *args, **kwargs):
+def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, dbg, *args, **kwargs):
     """
     Applies the given directive and its associated clause list
     to the given intermediate_rep.
@@ -37,7 +37,7 @@ def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, 
     """
     # TODO: This is the main batch of work that needs to get done to make this compliant with the OpenACC standard
     if directive  == "parallel":
-        parallel.parallel(clause_list, intermediate_rep, lineno, *args, **kwargs)
+        parallel.parallel(clause_list, intermediate_rep, lineno, dbg, *args, **kwargs)
     elif directive == "kernels":
         pass
     elif directive == "serial":
@@ -51,7 +51,7 @@ def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, 
     elif directive == "host_data":
         pass
     elif directive == "loop":
-        loop.loop(clause_list, intermediate_rep, lineno, *args, **kwargs)
+        loop.loop(clause_list, intermediate_rep, lineno, dbg, *args, **kwargs)
     elif directive == "cache":
         pass
     elif directive == "atomic":

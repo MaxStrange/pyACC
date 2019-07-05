@@ -3,7 +3,7 @@ This module contains all the clauses common to several constructs.
 """
 import acc.frontend.util.errors as errors
 
-def apply_clause(index, clause_list, intermediate_rep, loop_node):
+def apply_clause(index, clause_list, intermediate_rep, node, dbg):
     """
     Consumes however much of the clause list as necessary to apply the clause
     found at index in the clause_list.
@@ -16,13 +16,13 @@ def apply_clause(index, clause_list, intermediate_rep, loop_node):
     @param intermediate_rep:    The intermediate representation, filled with information
                                 about the source code in general, but not yet this node.
 
-    @param loop_node:           The node who's information we are filling in with the clauses.
+    @param node:                The node who's information we are filling in with the clauses.
 
     @return:                    The new index. If there are no more
                                 clauses after this one is done, index will be -1.
 
     """
-    args = (index, clause_list, intermediate_rep, loop_node)
+    args = (index, clause_list, intermediate_rep, node, dbg)
     clause = clause_list[index]
     if   clause.startswith("async"):
         return _async(*args)
@@ -47,22 +47,22 @@ def apply_clause(index, clause_list, intermediate_rep, loop_node):
     elif clause.startswith("self"):
         return _self(*args)
     else:
-        errmsg = "Clause either not allowed for this directive, or else it may be spelled incorrectly. Clause given: {} at line: {}".format(clause, loop_node.lineno)
-        raise errors.InvalidClauseError(errmsg)
+        errmsg = "Clause either not allowed for this directive, or else it may be spelled incorrectly. Clause given: {}.".format(clause)
+        raise errors.InvalidClauseError(dbg.build_message(errmsg))
 
-def _async(index, clause_list, intermediate_rep, parallel_node):
+def _async(index, clause_list, intermediate_rep, node, dbg):
     """
     The async clause is optional; see Section 2.16 Asynchronous Behavior for more information
     """
     return -1
 
-def _wait(index, clause_list, intermediate_rep, parallel_node):
+def _wait(index, clause_list, intermediate_rep, node, dbg):
     """
     The wait clause is optional; see Section 2.16 Asynchronous Behavior for more information.
     """
     return -1
 
-def _num_gangs(index, clause_list, intermediate_rep, parallel_node):
+def _num_gangs(index, clause_list, intermediate_rep, node, dbg):
     """
     The num_gangs clause is allowed on the parallel and kernels constructs.
 
@@ -74,7 +74,7 @@ def _num_gangs(index, clause_list, intermediate_rep, parallel_node):
     """
     return -1
 
-def _num_workers(index, clause_list, intermediate_rep, parallel_node):
+def _num_workers(index, clause_list, intermediate_rep, node, dbg):
     """
     The num_workers clause is allowed on the parallel and kernels constructs.
 
@@ -87,7 +87,7 @@ def _num_workers(index, clause_list, intermediate_rep, parallel_node):
     """
     return -1
 
-def _vector_length(index, clause_list, intermediate_rep, parallel_node):
+def _vector_length(index, clause_list, intermediate_rep, node, dbg):
     """
     The vector_length clause is allowed on the parallel and kernels constructs.
 
@@ -100,7 +100,7 @@ def _vector_length(index, clause_list, intermediate_rep, parallel_node):
     """
     return -1
 
-def _private(index, clause_list, intermediate_rep, parallel_node):
+def _private(index, clause_list, intermediate_rep, node, dbg):
     """
     The private clause is allowed on the parallel and serial constructs.
 
@@ -108,7 +108,7 @@ def _private(index, clause_list, intermediate_rep, parallel_node):
     """
     return -1
 
-def _firstprivate(index, clause_list, intermediate_rep, parallel_node):
+def _firstprivate(index, clause_list, intermediate_rep, node, dbg):
     """
     The firstprivate clause is allowed on the parallel and serial constructs
 
@@ -118,7 +118,7 @@ def _firstprivate(index, clause_list, intermediate_rep, parallel_node):
     """
     return -1
 
-def _reduction(index, clause_list, intermediate_rep, parallel_node):
+def _reduction(index, clause_list, intermediate_rep, node, dbg):
     """
     The reduction clause is allowed on the parallel and serial constructs.
 
@@ -166,7 +166,7 @@ def _reduction(index, clause_list, intermediate_rep, parallel_node):
     """
     return -1
 
-def _default(index, clause_list, intermediate_rep, parallel_node):
+def _default(index, clause_list, intermediate_rep, node, dbg):
     """
     The default clause is optional.
 
@@ -179,7 +179,7 @@ def _default(index, clause_list, intermediate_rep, parallel_node):
     """
     return -1
 
-def _if(index, clause_list, intermediate_rep, parallel_node):
+def _if(index, clause_list, intermediate_rep, node, dbg):
     """
     The if clause is optional.
 
@@ -189,7 +189,7 @@ def _if(index, clause_list, intermediate_rep, parallel_node):
     """
     return -1
 
-def _self(index, clause_list, intermediate_rep, parallel_node):
+def _self(index, clause_list, intermediate_rep, node, dbg):
     """
     The self clause is optional.
 

@@ -146,13 +146,13 @@ def left_strip_src(src):
     """
     Left-justifies the given source code.
     """
-    as_list = src.split(os.linesep)
-    spaces = [_num_spaces(line) for line in as_list]
+    as_list = src.splitlines()
+    spaces = [_num_spaces(line) for line in as_list if line.strip()]
     justification = min(spaces)
     spaces = [x - justification for x in spaces]
     as_list = [line.lstrip() for line in as_list]
     as_list = [" " * space + line for line, space in zip(as_list, spaces)]
-    return os.linesep.join(as_list)
+    return "\n".join(as_list)
 
 def _num_spaces(line):
     """

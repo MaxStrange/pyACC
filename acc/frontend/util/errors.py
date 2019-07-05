@@ -2,6 +2,25 @@
 Errors used by the frontend.
 """
 
+class Debug:
+    """
+    Debug machine for building useful error messages.
+    """
+    def __init__(self, intermediate_rep):
+        self.intermediate_rep = intermediate_rep
+        self.lineno = None
+
+    def build_message(self, additionalmsg=None):
+        """
+        Builds a useful error message. If given, adds `additionalmsg`
+        on a new line after the built message.
+        """
+        line = self.intermediate_rep.src.splitlines()[self.lineno]
+        msg = "Error at line:\n{}\n".format(line)
+        if additionalmsg is not None:
+            msg += additionalmsg
+        return msg
+
 class InvalidClauseError(Exception):
     """
     Indicates an invalid clause while parsing a pragma. Either the clause
