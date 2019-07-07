@@ -1,13 +1,18 @@
 """
-This is a module.
+Another source code module for testing.
 """
-import acc.api as pyacc
 import math as mat
+import os
+import sys
+
+mydir = os.path.abspath(os.path.dirname(__file__))
+sys.path.insert(0, os.path.abspath(os.path.join(mydir, "../..")))
+import acc.api as openacc
 
 def modules_local_function(nothing):
-    print("This module is a hoax!")
+    pass
 
-@pyacc.acc()
+@openacc.acc()
 def square(ls):
     """
     This is the test function's doc string. This function's got lots going on

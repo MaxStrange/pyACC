@@ -24,6 +24,13 @@ def no_pragmas1():
     """
     pass
 
+@openacc.acc()
+def no_pragmas2():
+    """
+    Another docstring.
+    """
+    return 5 + 5
+
 ####################################################################################
 ###################### ACTUAL TESTS ################################################
 ####################################################################################
@@ -36,6 +43,7 @@ class TestNominalUsage(unittest.TestCase):
         # Simple crash tests
         no_pragmas0()
         no_pragmas1()
+        no_pragmas2()
 
 if __name__ == "__main__":
     unittest.main()
