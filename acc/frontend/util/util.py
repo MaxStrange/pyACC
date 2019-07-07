@@ -20,6 +20,7 @@ def compile_kernel_module(src):
     """
     tmp = tempfile.NamedTemporaryFile(suffix=".py", delete=False)
     tmp.write(src.encode('utf-8'))
+    tmp.close()
     return tmp.name
 
 def load_kernel_module(fpath):

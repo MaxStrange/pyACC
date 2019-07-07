@@ -73,15 +73,14 @@ def acc():
     def decorate(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            try:
-                getattr(back, "compile")
-            except AttributeError:
-                raise ImportError("Back end does not have a 'compile' function.")
-
             # Initialize the OpenACC internal control variables if not already initialized
             _construct_icvs()
             if back is None:
                 load_back_end()
+            try:
+                getattr(back, "compile")
+            except AttributeError:
+                raise ImportError("Back end does not have a 'compile' function.")
 
             # Grab the source code from the decorated function
             source = dill.source.getsource(func)
