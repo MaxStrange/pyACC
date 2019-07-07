@@ -7,14 +7,43 @@ import acc.frontend.util.errors as errors
 import acc.frontend.util.util as util
 import acc.frontend.frontend as frontend
 import acc.ir.metavars as metavars
+import acc.ir.icv as icv
 import acc.ir.intrep as intrep
 import dill
 import functools
 import inspect
+import os
 import sys
+
+# The default device type, used if not overridden by the user
+DEFAULT_DEVICE_TYPE = 'host'
+
+# The default device number, used if not overridden by the user
+DEFAULT_DEVICE_NUM  = 0
+
+# The default asynchronous queue, used when not specified by async clauses
+DEFAULT_ASYNC       = 0
 
 # The back end
 back = None
+
+# The control variables
+icvs = None
+
+def _initialize_acc():
+    """
+    Initializes the OpenACC runtime if not already initialized. This should
+    wrap every runtime API function.
+    """
+    def decorate(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            _construct_icvs()
+            if back is None:
+                load_back_end()
+            return func(*args, **kwargs)
+        return wrapper
+    return decorate
 
 def acc():
     """
@@ -22,11 +51,13 @@ def acc():
 
     Usage:
 
+    ```python
     @acc()
-    def function_to_list_pragmas_in(data, ret):
+    def function_to_accelerate(data, ret):
         #pragma acc parallel loop copyout=ret[0:len(data)]
         for d in data:
             ret.append(d ** 2)
+    ```
 
     NOTE: You cannot use global variables in the function that is decorated.
           The results are undefined if you do that, but it will likely result
@@ -42,14 +73,15 @@ def acc():
     def decorate(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            global back
-            if not back:
-                raise ImportError("No back end loaded. First call load_back_end")
-            else:
-                try:
-                    getattr(back, "compile")
-                except AttributeError:
-                    raise ImportError("Back end does not have a 'compile' function.")
+            try:
+                getattr(back, "compile")
+            except AttributeError:
+                raise ImportError("Back end does not have a 'compile' function.")
+
+            # Initialize the OpenACC internal control variables if not already initialized
+            _construct_icvs()
+            if back is None:
+                load_back_end()
 
             # Grab the source code from the decorated function
             source = dill.source.getsource(func)
@@ -65,7 +97,7 @@ def acc():
             module = sys.modules[func.__module__]
             meta_data = metavars.MetaVars(src=source, stackframe=stackframe, signature=signature, funcs_name=funcname, funcs_module=module)
 
-            intermediate_rep = intrep.IntermediateRepresentation(meta_data)
+            intermediate_rep = intrep.IntermediateRepresentation(meta_data, icvs)
             dbg = errors.Debug(intermediate_rep)
             for pragma, linenumber in frontend.parse_pragmas(intermediate_rep.src, *args, **kwargs):
                 dbg.lineno = linenumber
@@ -105,12 +137,14 @@ def load_back_end(back_end="default"):
     for comp in components[1:]:
         back = getattr(back, comp)
 
+@_initialize_acc()
 def get_num_devices(devtype: str) -> int:
     """
     Returns the number of devices of the given type.
     """
     pass
 
+@_initialize_acc()
 def set_device_type(devtype: str) -> None:
     """
     Description
@@ -123,13 +157,15 @@ def set_device_type(devtype: str) -> None:
 
     Restrictions
     ------------
-    • If the device type specified is not available, the behavior is implementation-defined; in
+    - If the device type specified is not available, the behavior is implementation-defined; in
       particular, the program may abort.
-    • If some compute regions are compiled to only use one device type, calling this routine with a
+    - If some compute regions are compiled to only use one device type, calling this routine with a
       different device type may produce undefined behavior.
     """
-    pass
+    # TODO: Determine how to make this work on a per-thread basis. Ditto for the other gets and sets.
+    icvs.current_device_type = devtype
 
+@_initialize_acc()
 def get_device_type() -> str:
     """
     Description
@@ -142,10 +178,11 @@ def get_device_type() -> str:
 
     Restrictions
     ------------
-    • If the device type has not yet been selected, the value acc_device_none may be returned.
+    - If the device type has not yet been selected, the value acc_device_none may be returned.
     """
-    pass
+    return icvs.current_device_type
 
+@_initialize_acc()
 def set_device_num(n: int, devtype: str) -> None:
     """
     Description
@@ -160,19 +197,21 @@ def set_device_num(n: int, devtype: str) -> None:
 
     Restrictions
     ------------
-    • If the value of devicenum is greater than or equal to the value returned by acc_get_num_devices
+    - If the value of devicenum is greater than or equal to the value returned by acc_get_num_devices
       for that device type, the behavior is implementation-defined.
-    • Calling acc_set_device_num implies a call to acc_set_device_type with that
+    - Calling acc_set_device_num implies a call to acc_set_device_type with that
       device type argument.
     """
     pass
 
+@_initialize_acc()
 def get_device_num(devtype: str) -> int:
     """
     The acc_get_device_num routine returns the value of acc-current-device-num-var for the current thread.
     """
     pass
 
+@_initialize_acc()
 def get_device_property(devnum: int, devtype: str, property: str):
     """
     Description
@@ -210,6 +249,7 @@ def get_device_property(devnum: int, devtype: str, property: str):
     """
     pass
 
+@_initialize_acc()
 def init(devtype: str) -> None:
     """
     Description
@@ -230,6 +270,7 @@ def init(devtype: str) -> None:
     """
     pass
 
+@_initialize_acc()
 def shutdown(devtype: str) -> None:
     """
     Description
@@ -248,6 +289,7 @@ def shutdown(devtype: str) -> None:
     """
     pass
 
+@_initialize_acc()
 def async_test(i: int) -> int:
     """
     Description
@@ -264,6 +306,7 @@ def async_test(i: int) -> int:
     """
     pass
 
+@_initialize_acc()
 def async_test_all() -> int:
     """
     Description
@@ -278,6 +321,7 @@ def async_test_all() -> int:
     """
     pass
 
+@_initialize_acc()
 def wait(i: int) -> None:
     """
     Description
@@ -294,6 +338,7 @@ def wait(i: int) -> None:
     """
     pass
 
+@_initialize_acc()
 def wait_async(w: int, a: int) -> None:
     """
     Description
@@ -307,6 +352,7 @@ def wait_async(w: int, a: int) -> None:
     """
     pass
 
+@_initialize_acc()
 def wait_all() -> None:
     """
     Description
@@ -320,6 +366,7 @@ def wait_all() -> None:
     """
     pass
 
+@_initialize_acc()
 def wait_all_async(i: int) -> None:
     """
     Description
@@ -332,6 +379,7 @@ def wait_all_async(i: int) -> None:
     """
     pass
 
+@_initialize_acc()
 def get_default_async() -> int:
     """
     Description
@@ -342,6 +390,7 @@ def get_default_async() -> int:
     """
     pass
 
+@_initialize_acc()
 def set_default_async(i: int) -> None:
     """
     Description
@@ -357,6 +406,7 @@ def set_default_async(i: int) -> None:
     """
     pass
 
+@_initialize_acc()
 def on_device(devtype: str) -> int:
     """
     Description
@@ -376,6 +426,7 @@ def on_device(devtype: str) -> int:
     """
     pass
 
+@_initialize_acc()
 def malloc(nbytes: int):
     """
     Description
@@ -387,6 +438,7 @@ def malloc(nbytes: int):
     """
     pass
 
+@_initialize_acc()
 def free():
     """
     Description
@@ -397,6 +449,7 @@ def free():
     """
     pass
 
+@_initialize_acc()
 def copyin(buf, size):
     """
     Description
@@ -427,6 +480,7 @@ def copyin(buf, size):
     """
     pass
 
+@_initialize_acc()
 def create():
     """
     Description
@@ -457,6 +511,7 @@ def create():
     """
     pass
 
+@_initialize_acc()
 def copyout():
     """
     Description
@@ -484,6 +539,7 @@ def copyout():
     """
     pass
 
+@_initialize_acc()
 def delete():
     """
     Description
@@ -508,10 +564,12 @@ def delete():
     """
     pass
 
+@_initialize_acc()
 def update_device():
     """
     Description
     -----------
+
     The acc_update_device routine is equivalent to the update directive with a
     device clause, as described in Section 2.14.4. In C, the arguments are a pointer to the data and
     length in bytes. In Fortran, two forms are supported. In the first, the argument is a contiguous array
@@ -527,6 +585,7 @@ def update_device():
     """
     pass
 
+@_initialize_acc()
 def update_self():
     """
     Description
@@ -547,6 +606,7 @@ def update_self():
     """
     pass
 
+@_initialize_acc()
 def map_data():
     """
     Description
@@ -566,6 +626,7 @@ def map_data():
     """
     pass
 
+@_initialize_acc()
 def unmap_data():
     """
     Description
@@ -581,6 +642,7 @@ def unmap_data():
     """
     pass
 
+@_initialize_acc()
 def deviceptr():
     """
     Description
@@ -592,6 +654,7 @@ def deviceptr():
     """
     pass
 
+@_initialize_acc()
 def hostptr():
     """
     Description
@@ -603,6 +666,7 @@ def hostptr():
     """
     pass
 
+@_initialize_acc()
 def is_present():
     """
     Description
@@ -618,6 +682,7 @@ def is_present():
     """
     pass
 
+@_initialize_acc()
 def memcpy_to_device():
     """
     Description
@@ -634,6 +699,7 @@ def memcpy_to_device():
     """
     pass
 
+@_initialize_acc()
 def memcpy_from_device():
     """
     Description
@@ -650,6 +716,7 @@ def memcpy_from_device():
     """
     pass
 
+@_initialize_acc()
 def memcpy_device():
     """
     Description
@@ -666,6 +733,7 @@ def memcpy_device():
     """
     pass
 
+@_initialize_acc()
 def attach():
     """
     Description
@@ -682,6 +750,7 @@ def attach():
     """
     pass
 
+@_initialize_acc()
 def detach():
     """
     Description
@@ -704,3 +773,16 @@ def detach():
     versions will not return until the data has been completely transferred.
     """
     pass
+
+def _construct_icvs():
+    """
+    Construct the ICVs object out of the environment variables
+    and/or values that have been set by runtime API calls.
+    """
+    global icvs
+    if icvs is None:
+        current_device_type = os.environ.get('ACC_DEVICE_TYPE', default=DEFAULT_DEVICE_TYPE)
+        current_device_num = os.environ.get('ACC_DEVICE_NUM', default=DEFAULT_DEVICE_NUM)
+        default_async = DEFAULT_ASYNC
+
+        icvs = icv.ICVs(current_device_type, current_device_num, default_async)

@@ -39,8 +39,12 @@ class CollapseClause:
     """
     All the information needed by the back-end for a loop's collapse clause.
 
-    From the docs:
+    Items
+    -----
+    - loops : The list (in order of source from top to bottom) of for-loops to collapse. Type is collapse.Loop.
 
+    From the docs
+    -------------
     The collapse clause is used to specify how many tightly nested loops are associated with the
     loop construct. The argument to the collapse clause must be a constant positive integer expression.
     If no collapse clause appears, only the immediately following loop is associated with the
@@ -63,3 +67,6 @@ class CollapseClause:
         if len(v.loops) != n:
             plural = "loop" if n == 1 else "loops"
             raise SyntaxError(dbg.build_message("Clause specifies {} {}, but {} found.").format(n, plural, len(v.loops)))
+
+        assert n > 0, "n is {}, but must be > 0".format(n)
+        self.loops = list(v.loops)[0:n]

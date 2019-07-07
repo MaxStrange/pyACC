@@ -47,13 +47,14 @@ class IntermediateRepresentation:
 
     # TODO: Give an example
     """
-    def __init__(self, meta_data):
+    def __init__(self, meta_data, icvs):
         """
         """
-        self.meta_data = meta_data      # All the meta data
-        self.src = meta_data.src        # Shortcut to the source code
-        self.root = AccNode(0)          # The root of the tree
-        self._lineno_lookup = {}        # A hash table for line number -> IrNode
+        self.meta_data = meta_data          # All the meta data
+        self.internal_control_vars = icvs   # All the ICVs for the back-end
+        self.src = meta_data.src            # Shortcut to the source code
+        self.root = AccNode(0)              # The root of the tree
+        self._lineno_lookup = {}            # A hash table for line number -> IrNode
 
     def add_child(self, child):
         """

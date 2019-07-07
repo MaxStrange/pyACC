@@ -225,6 +225,15 @@ def _worker(index, clause_list, intermediate_rep, loop_node, dbg):
     All workers will complete execution of their assigned iterations before any worker proceeds beyond
     the end of the loop.
     """
+    # TODO
+    # Parse gang clause: "gang [(gang-arg-list)]", where "gang-arg-list" is:
+    # at most one num and at most one static, where num is an int-expr and static is a size-expr,
+    # where: int-expr is: TODO and size-expr is either * or an int-expr.
+
+    # Also, once parsed, deterimine if parsing was legal:
+    # If the loop_node is part of a parallel (or nothing), no argument is allowed.
+    # If the loop_node is part of a kernels construct however, the argument is allowed
+    # only when the kernels construct does not already contain a num_workers clause
     print("Loop: Worker")
     return -1
 
