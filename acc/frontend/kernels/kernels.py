@@ -67,3 +67,28 @@ The copy, copyin, copyout, create, no_create, present, deviceptr, and attach
 data clauses are described in Section 2.7 Data Clauses. The device_type clause is described in
 Section 2.4 Device-Specific Clauses.
 """
+from acc.ir.intrep import IrNode
+
+class KernelsNode(IrNode):
+    """
+    Node for the IntermediateRepresentation tree that is used for kernels constructs.
+    """
+    def __init__(self, lineno: int):
+        super().__init__(lineno)
+        self.async_ = None
+        self.wait = None
+        self.num_gangs = None
+        self.num_workers = None
+        self.vector_length = None
+        self.device_type = None
+        self.if_ = None
+        self.self_ = None
+        self.copy = None
+        self.copyin = None
+        self.copyout = None
+        self.create = None
+        self.no_create = None
+        self.present = None
+        self.deviceptr = None
+        self.attach = None
+        self.default = None

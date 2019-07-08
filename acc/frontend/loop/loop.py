@@ -3,15 +3,16 @@ Module for the loop directive.
 
 Provides one API function: loop
 """
-from acc.ir.intrep import IntermediateRepresentation, IrNode
-from acc.frontend.util.errors import InvalidClauseError
-from acc.frontend.loop.loopvisitors import collapse
+import acc.ir.intrep as intrep
+import acc.frontend.util.errors as errors
+import acc.frontend.loop.clauses.collapse as collapse
+import acc.frontend.kernels.kernels as kernels
 import acc.frontend.util.util as util
 import ast
 import asttokens
 import re
 
-class LoopNode(IrNode):
+class LoopNode(intrep.IrNode):
     """
     Node for the IntermediateRepresentation tree that is used for loop constructs.
     """
@@ -43,8 +44,10 @@ def loop(clauses, intermediate_rep, lineno, dbg, *args, **kwargs):
     ------
     The syntax of the loop construct is
 
+    ```python
     #pragma acc loop [clause-list] new-line
     for loop
+    ```
 
     where clause is one of the following:
 
@@ -61,11 +64,14 @@ def loop(clauses, intermediate_rep, lineno, dbg, *args, **kwargs):
     - reduction( operator:var-list )
 
     where gang-arg is one of:
+
     - [num:]int-expr
     - static:size-expr
+
     and gang-arg-list may have at most one num and one static argument,
 
     and where size-expr is one of:
+
     - *
     - int-expr
 
@@ -76,12 +82,13 @@ def loop(clauses, intermediate_rep, lineno, dbg, *args, **kwargs):
 
     Restrictions
     ------------
-    • Only the collapse, gang, worker, vector, seq, auto, and tile clauses may follow
-    a device_type clause.
-    • The int-expr argument to the worker and vector clauses must be invariant in the kernels
-    region.
-    • A loop associated with a loop construct that does not have a seq clause must be written
-    such that the loop iteration count is computable when entering the loop construct.
+
+    - Only the collapse, gang, worker, vector, seq, auto, and tile clauses may follow
+      a device_type clause.
+    - The int-expr argument to the worker and vector clauses must be invariant in the kernels
+      region.
+    - A loop associated with a loop construct that does not have a seq clause must be written
+      such that the loop iteration count is computable when entering the loop construct.
     """
     loop_node = LoopNode(lineno)
     index = 0
@@ -133,7 +140,7 @@ def _apply_clause(index, clause_list, intermediate_rep, loop_node, dbg):
         return _reduction(*args)
     else:
         errmsg = "Clause either not allowed for this directive, or else it may be spelled incorrectly. Clause given: {}.".format(clause)
-        raise InvalidClauseError(dbg.build_message(errmsg))
+        raise errors.InvalidClauseError(dbg.build_message(errmsg))
 
 def _collapse(index, clause_list, intermediate_rep, loop_node, dbg):
     """
@@ -225,15 +232,30 @@ def _worker(index, clause_list, intermediate_rep, loop_node, dbg):
     All workers will complete execution of their assigned iterations before any worker proceeds beyond
     the end of the loop.
     """
-    # TODO
-    # Parse gang clause: "gang [(gang-arg-list)]", where "gang-arg-list" is:
-    # at most one num and at most one static, where num is an int-expr and static is a size-expr,
-    # where: int-expr is: TODO and size-expr is either * or an int-expr.
+    # Parse worker clause: "worker [(int-expr)]"
+    regex = re.compile(r"worker(\s)*\(.*\)")
+    match = regex.match(clause_list[index])
+    if match:
+        # Get whatever is in the parentheses as the number of workers
+        int_expr = match.group(0).strip().lstrip('worker').strip()  # (int-expr)
+        int_expr_no_parens = int_expr[1:-1]  # int-expr
+        try:
+            num_workers = eval(int_expr_no_parens)
+        except SyntaxError:
+            dbg.build_message("Argument to the worker clause must be valid python syntax.")
+            raise
+        except NameError:
+            dbg.build_message("Argument to the worker clause must contain only variables currently in scope.")
+            raise
+    else:
+        num_workers = None  # Determined by back-end
 
-    # Also, once parsed, deterimine if parsing was legal:
+    # Also, once parsed, determine if parsing was legal:
     # If the loop_node is part of a parallel (or nothing), no argument is allowed.
     # If the loop_node is part of a kernels construct however, the argument is allowed
     # only when the kernels construct does not already contain a num_workers clause
+    # TODO: Figure out what to do about the possibility that this is a hybrid parallel-loop clause
+    #ancestor_types = [type(n) for n in intermediate_rep.get_ancestors(loop_node)]
     print("Loop: Worker")
     return -1
 
