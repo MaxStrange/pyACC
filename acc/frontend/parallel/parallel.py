@@ -185,7 +185,7 @@ def _loop(index, clause_list, intermediate_rep, parallel_node, dbg):
         return index
     else:
         while index != -1:
-            index = loop._apply_clause(index, clause_list, intermediate_rep, loop_node, dbg)
+            index = loop.apply_clause(index, clause_list, intermediate_rep, loop_node, dbg, hybrid='parallel')
         parallel_node.add_child(loop_node)
         assert index == -1
         return index

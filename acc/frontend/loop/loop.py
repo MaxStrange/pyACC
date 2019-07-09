@@ -6,7 +6,10 @@ Provides one API function: loop
 import acc.ir.intrep as intrep
 import acc.frontend.util.errors as errors
 import acc.frontend.loop.clauses.collapse as collapse
+import acc.frontend.loop.clauses.worker as worker
+import acc.frontend.loop.clauses.vector as vector
 import acc.frontend.kernels.kernels as kernels
+import acc.frontend.parallel.parallel as parallel
 import acc.frontend.util.util as util
 import ast
 import asttokens
@@ -18,10 +21,10 @@ class LoopNode(intrep.IrNode):
     """
     def __init__(self, lineno: int):
         super().__init__(lineno)
-        self.collapse = None
+        self.collapse = None        # clauses.collapse.CollapseClause
         self.gang = None
-        self.worker = None
-        self.vector = None
+        self.worker = None          # clauses.worker.WorkerClause
+        self.vector = None          # clauses.vector.VectorClause
         self.seq = None
         self.auto = None
         self.tile = None
@@ -93,10 +96,10 @@ def loop(clauses, intermediate_rep, lineno, dbg, *args, **kwargs):
     loop_node = LoopNode(lineno)
     index = 0
     while index != -1:
-        index = _apply_clause(index, clauses, intermediate_rep, loop_node, dbg)
+        index = apply_clause(index, clauses, intermediate_rep, loop_node, dbg)
     intermediate_rep.add_child(loop_node)
 
-def _apply_clause(index, clause_list, intermediate_rep, loop_node, dbg):
+def apply_clause(index, clause_list, intermediate_rep, loop_node, dbg, hybrid=None):
     """
     Consumes however much of the clause list as necessary to apply the clause
     found at index in the clause_list.
@@ -111,10 +114,13 @@ def _apply_clause(index, clause_list, intermediate_rep, loop_node, dbg):
 
     @param loop_node:           The node who's information we are filling in with the clauses.
 
+    @param hybrid:              If the loop construct is a parallel-loop, kernels-loop, or serial-loop
+                                hybrid, this argument should be 'parallel', 'kernels', or 'serial'.
+
     @return:                    The new index. If there are no more
                                 clauses after this one is done, index will be -1.
     """
-    args = (index, clause_list, intermediate_rep, loop_node, dbg)
+    args = (index, clause_list, intermediate_rep, loop_node, dbg, hybrid)
     clause = clause_list[index]
     if   clause.startswith("collapse"):
         return _collapse(*args)
@@ -142,7 +148,7 @@ def _apply_clause(index, clause_list, intermediate_rep, loop_node, dbg):
         errmsg = "Clause either not allowed for this directive, or else it may be spelled incorrectly. Clause given: {}.".format(clause)
         raise errors.InvalidClauseError(dbg.build_message(errmsg))
 
-def _collapse(index, clause_list, intermediate_rep, loop_node, dbg):
+def _collapse(index, clause_list, intermediate_rep, loop_node, dbg, hybrid):
     """
     The collapse clause is used to specify how many tightly nested loops are associated with the
     loop construct. The argument to the collapse clause must be a constant positive integer expression.
@@ -176,11 +182,12 @@ def _collapse(index, clause_list, intermediate_rep, loop_node, dbg):
     # Annotate the loop node with the collapse clause's information
     loop_node.collapse = collapse.CollapseClause(v, n, dbg)
 
-    print("Loop: Collapse")
+    print("COLLAPSE:", len(loop_node.collapse.loops))
+
     new_index = index + 1 if index + 1 < len(clause_list) else -1
     return new_index
 
-def _gang(index, clause_list, intermediate_rep, loop_node, dbg):
+def _gang(index, clause_list, intermediate_rep, loop_node, dbg, hybrid):
     """
     When the parent compute construct is a parallel construct, or on an orphaned loop construct,
     the gang clause specifies that the iterations of the associated loop or loops are to be executed in
@@ -211,7 +218,7 @@ def _gang(index, clause_list, intermediate_rep, loop_node, dbg):
     """
     return -1
 
-def _worker(index, clause_list, intermediate_rep, loop_node, dbg):
+def _worker(index, clause_list, intermediate_rep, loop_node, dbg, hybrid):
     """
     When the parent compute construct is a parallel construct, or on an orphaned loop construct,
     the worker clause specifies that the iterations of the associated loop or loops are to be executed
@@ -233,33 +240,30 @@ def _worker(index, clause_list, intermediate_rep, loop_node, dbg):
     the end of the loop.
     """
     # Parse worker clause: "worker [(int-expr)]"
-    regex = re.compile(r"worker(\s)*\(.*\)")
-    match = regex.match(clause_list[index])
-    if match:
-        # Get whatever is in the parentheses as the number of workers
-        int_expr = match.group(0).strip().lstrip('worker').strip()  # (int-expr)
-        int_expr_no_parens = int_expr[1:-1]  # int-expr
-        try:
-            num_workers = eval(int_expr_no_parens)
-        except SyntaxError:
-            dbg.build_message("Argument to the worker clause must be valid python syntax.")
-            raise
-        except NameError:
-            dbg.build_message("Argument to the worker clause must contain only variables currently in scope.")
-            raise
-    else:
-        num_workers = None  # Determined by back-end
+    num_workers = util.parse_clause_with_parens("worker", clause_list[index], dbg)
 
-    # Also, once parsed, determine if parsing was legal:
     # If the loop_node is part of a parallel (or nothing), no argument is allowed.
+    ancestors = [n for n in intermediate_rep.get_ancestors(loop_node)]
+    ancestor_types = [type(n) for n in ancestors]
+    if not kernels.KernelsNode in ancestor_types and hybrid not in ('parallel', 'serial'):
+        err_msg = dbg.build_message("'worker' clause only allowed on loop construct for loops inside kernels, not parallel, serial, or orphaned.")
+        raise errors.InvalidClauseError(err_msg)
+
     # If the loop_node is part of a kernels construct however, the argument is allowed
     # only when the kernels construct does not already contain a num_workers clause
-    # TODO: Figure out what to do about the possibility that this is a hybrid parallel-loop clause
-    #ancestor_types = [type(n) for n in intermediate_rep.get_ancestors(loop_node)]
-    print("Loop: Worker")
-    return -1
+    if kernels.KernelsNode in ancestor_types:
+        knode = next(node for node in ancestors if type(node) == kernels.KernelsNode)
+        if knode.num_workers is not None:
+            err_msg = dbg.build_message("'worker' clause only allowed on loop in a kernels region if parent kernels does not already contain 'num_workers' clause.")
+            raise errors.InvalidClauseError(err_msg)
 
-def _vector(index, clause_list, intermediate_rep, loop_node, dbg):
+    loop_node.worker = worker.WorkerClause(num_workers)
+
+    print("WORKER:", num_workers)
+    new_index = index + 1 if index + 1 < len(clause_list) else -1
+    return new_index
+
+def _vector(index, clause_list, intermediate_rep, loop_node, dbg, hybrid):
     """
     When the parent compute construct is a parallel construct, or on an orphaned loop construct,
     the vector clause specifies that the iterations of the associated loop or loops are to be executed in
@@ -273,6 +277,7 @@ def _vector(index, clause_list, intermediate_rep, loop_node, dbg):
     When the parent compute construct is a kernels construct, the vector clause specifies that the
     iterations of the associated loop or loops are to be executed with vector or SIMD processing. An
     argument is allowed only when the vector_length does not appear on the kernels construct.
+
     If an argument is specified, the iterations will be processed in vector strips of that length; if no
     argument is specified, the implementation will choose an appropriate vector length. The region of
     a loop with the vector clause may not contain a loop with a gang, worker, or vector clause
@@ -281,17 +286,34 @@ def _vector(index, clause_list, intermediate_rep, loop_node, dbg):
     All vector lanes will complete execution of their assigned iterations before any vector lane proceeds
     beyond the end of the loop.
     """
-    print("Loop: Vector")
-    return -1
+    # Parse worker clause: "vector [(int-expr)]"
+    veclength = util.parse_clause_with_parens("vector", clause_list[index], dbg)
 
-def _seq(index, clause_list, intermediate_rep, loop_node, dbg):
+    # If the loop_node is part of a kernels construct the argument is allowed
+    # only when the kernels construct does not already contain a vector_length clause
+    ancestors = [n for n in intermediate_rep.get_ancestors(loop_node)]
+    ancestor_types = [type(n) for n in ancestors]
+    if kernels.KernelsNode in ancestor_types:
+        knode = next(node for node in ancestors if type(node) == kernels.KernelsNode)
+        if knode.vector_length is not None:
+            err_msg = dbg.build_message("'vector' clause only allowed on loop in a kernels region if parent kernels does not already contain 'vector_length' clause.")
+            raise errors.InvalidClauseError(err_msg)
+
+    loop_node.vector = vector.VectorClause(veclength)
+
+    print("VECTOR:", veclength)
+
+    new_index = index + 1 if index + 1 < len(clause_list) else -1
+    return new_index
+
+def _seq(index, clause_list, intermediate_rep, loop_node, dbg, hybrid):
     """
     The seq clause specifies that the associated loop or loops are to be executed sequentially by the
     accelerator. This clause will override any automatic parallelization or vectorization.
     """
     return -1
 
-def _auto(index, clause_list, intermediate_rep, loop_node, dbg):
+def _auto(index, clause_list, intermediate_rep, loop_node, dbg, hybrid):
     """
     The auto clause specifies that the implementation must analyze the loop and determine whether
     the loop iterations are data independent and, if so, select whether to apply parallelism to this loop
@@ -302,7 +324,7 @@ def _auto(index, clause_list, intermediate_rep, loop_node, dbg):
     """
     return -1
 
-def _tile(index, clause_list, intermediate_rep, loop_node, dbg):
+def _tile(index, clause_list, intermediate_rep, loop_node, dbg, hybrid):
     """
     The tile clause specifies that the implementation should split each loop in the loop nest into two
     loops, with an outer set of tile loops and an inner set of element loops. The argument to the tile
@@ -323,14 +345,14 @@ def _tile(index, clause_list, intermediate_rep, loop_node, dbg):
     """
     return -1
 
-def _device_type(index, clause_list, intermediate_rep, loop_node, dbg):
+def _device_type(index, clause_list, intermediate_rep, loop_node, dbg, hybrid):
     """
     The 'device_type' clause is described in Section 2.4 Device-Specific
     Clauses.
     """
     return -1
 
-def _independent(index, clause_list, intermediate_rep, loop_node, dbg):
+def _independent(index, clause_list, intermediate_rep, loop_node, dbg, hybrid):
     """
     The independent clause tells the implementation that the iterations of this loop are data-independent
     with respect to each other. This allows the implementation to generate code to execute the iterations
@@ -345,7 +367,7 @@ def _independent(index, clause_list, intermediate_rep, loop_node, dbg):
     """
     return -1
 
-def _private(index, clause_list, intermediate_rep, loop_node, dbg):
+def _private(index, clause_list, intermediate_rep, loop_node, dbg, hybrid):
     """
     The private clause on a loop construct specifies that a copy of each item in var-list will be
     created. If the body of the loop is executed in vector-partitioned mode, a copy of the item is created
@@ -356,7 +378,7 @@ def _private(index, clause_list, intermediate_rep, loop_node, dbg):
     """
     return -1
 
-def _reduction(index, clause_list, intermediate_rep, loop_node, dbg):
+def _reduction(index, clause_list, intermediate_rep, loop_node, dbg, hybrid):
     """
     The reduction clause specifies a reduction operator and one or more vars. For each reduction
     var, a private copy is created in the same manner as for a private clause on the loop construct,

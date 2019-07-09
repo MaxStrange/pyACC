@@ -68,6 +68,33 @@ class IntermediateRepresentation:
         assert child.lineno not in self._lineno_lookup, "Line number {} already in hash. Hash: {}".format(child.lineno, self._lineno_lookup)
         self._lineno_lookup[child.lineno] = child
 
+        parent = self._get_parent(child)
+        parent.add_child(child)
+
+    def get_ancestors(self, node: IrNode) -> [IrNode]:
+        """
+        If `node` is already present in the IR tree, this method returns a list of
+        references to the ancestors of that node.
+
+        If `node` is not already present in the IR tree, this method returns a list
+        of references to the ancestors that would exist, were this node inserted into
+        the tree right now.
+        """
+        ancestors = []
+        parent = self._get_parent(node)
+        while id(parent) != id(self.root):
+            ancestors.append(parent)
+            parent = self._get_parent(parent)
+
+        # Lastly, append the root
+        ancestors.append(self.root)
+        return ancestors
+
+    def _get_parent(self, child: IrNode) -> IrNode:
+        """
+        Finds the parent of the given child. The last resort parent is the
+        root node, which is the parent to everyone.
+        """
         # Get the source code above child and reverse it for easy iteration
         src_lines_above_child = self.src.splitlines()[0:child.lineno]
         src_lines_above_child.reverse()
@@ -79,18 +106,14 @@ class IntermediateRepresentation:
         for lineno, line in zip(line_numbers, src_lines_above_child):
             if regexp.match(line):
                 # This line is a '#pragma acc' line. Check if it encompasses me.
-                # If it does, we look it up and add the new child to it.
-                # If it does not, then we keep going.
                 if self._pragma_encompasses_child(child, lineno):
                     parent = self._get_node_by_lineno(lineno)
                     assert parent is not None, "Could not find node for pragma {} at line {}".format(line, lineno)
-                    parent.add_child(child)
-                    return
+                    return parent
 
-        # If we get here without adding the new child to the tree, it is because
-        # we have scanned the whole function and not found any nodes that
-        # encompass the new child. Add the child to the top-level.
-        self.root.add_child(child)
+        # If we get here it is because we have scanned the whole function and not
+        # found any nodes that encompass the child.
+        return self.root
 
     def _get_node_by_lineno(self, lineno: int) -> IrNode:
         """

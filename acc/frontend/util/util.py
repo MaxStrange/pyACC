@@ -8,6 +8,7 @@ import asttokens
 import importlib.util
 import inspect
 import os
+import re
 import sys
 import tempfile
 import types
@@ -154,6 +155,31 @@ def left_strip_src(src):
     as_list = [line.lstrip() for line in as_list]
     as_list = [" " * space + line for line, space in zip(as_list, spaces)]
     return "\n".join(as_list)
+
+def parse_clause_with_parens(clausename, clause, dbg):
+    """
+    Parses a clause of the form "clausename(foo)"
+    and returns foo after eval()ing it.
+    Returns None if not matched.
+    """
+    regex = re.compile(r"{}(\s)*\(.*\)".format(clausename))
+    match = regex.match(clause)
+    if match:
+        # Get whatever is in the parentheses as the expr
+        expr = match.group(0).strip().lstrip(clausename).strip()  # (expr)
+        expr_no_parens = expr[1:-1]  # expr
+        try:
+            ret = eval(expr_no_parens)
+        except SyntaxError:
+            dbg.build_message("Argument to the {} clause must be valid python syntax.".format(clausename))
+            raise
+        except NameError:
+            dbg.build_message("Argument to the {} clause must contain only variables currently in scope.".format(clausename))
+            raise
+    else:
+        ret = None
+
+    return ret
 
 def _num_spaces(line):
     """
