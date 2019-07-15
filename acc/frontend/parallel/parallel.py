@@ -31,6 +31,30 @@ class ParallelNode(intrep.IrNode):
         self.firstprivate = None
         self.default = None
 
+    def __str__(self):
+        s  = "Parallel:\n"
+        s += "  async {}\n".format(self.async_)
+        s += "  wait {}\n".format(self.wait)
+        s += "  num_gangs {}\n".format(self.num_gangs)
+        s += "  num_workers {}\n".format(self.num_workers)
+        s += "  vector_length {}\n".format(self.vector_length)
+        s += "  device_type {}\n".format(self.device_type)
+        s += "  if {}\n".format(self.if_)
+        s += "  self {}\n".format(self.self_)
+        s += "  reduction {}\n".format(self.reduction)
+        s += "  copy {}\n".format(self.copy)
+        s += "  copyin {}\n".format(self.copyin)
+        s += "  copyout {}\n".format(self.copyout)
+        s += "  create {}\n".format(self.create)
+        s += "  no_create {}\n".format(self.no_create)
+        s += "  present {}\n".format(self.present)
+        s += "  attach {}\n".format(self.attach)
+        s += "  private {}\n".format(self.private)
+        s += "  firstprivate {}\n".format(self.firstprivate)
+        s += "  default {}\n".format(self.default)
+
+        return s
+
 def parallel(clauses, intermediate_rep, lineno, dbg, *args, **kwargs):
     """
     Summary
@@ -41,8 +65,10 @@ def parallel(clauses, intermediate_rep, lineno, dbg, *args, **kwargs):
     ------
     The syntax of the OpenACC parallel construct is
 
+    ```python
     #pragma acc parallel [clause-list] new-line
     structured block
+    ```
 
     where clause is one of the following:
 
@@ -97,19 +123,20 @@ def parallel(clauses, intermediate_rep, lineno, dbg, *args, **kwargs):
 
     Restrictions
     ------------
-    • A program may not branch into or out of an OpenACC parallel construct.
-    • A program must not depend on the order of evaluation of the clauses, or on any side effects
-    of the evaluations.
-    • Only the async, wait, num_gangs, num_workers, and vector_length clauses
-    may follow a device_type clause.
-    • At most one if clause may appear. In Fortran, the condition must evaluate to a scalar logical
-    value; in C or C++, the condition must evaluate to a scalar integer value.
-    • At most one default clause may appear, and it must have a value of either none or
-    present.
+    - A program may not branch into or out of an OpenACC parallel construct.
+    - A program must not depend on the order of evaluation of the clauses, or on any side effects
+      of the evaluations.
+    - Only the async, wait, num_gangs, num_workers, and vector_length clauses
+      may follow a device_type clause.
+    - At most one if clause may appear. In Fortran, the condition must evaluate to a scalar logical
+      value; in C or C++, the condition must evaluate to a scalar integer value.
+    - At most one default clause may appear, and it must have a value of either none or
+      present.
 
     The copy, copyin, copyout, create, no_create, present, deviceptr, and attach
     data clauses are described in Section 2.7 Data Clauses. The private and firstprivate
     clauses are described in Sections 2.5.11 and Sections 2.5.12.
+
     The device_type clause is described in Section 2.4 Device-Specific Clauses.
     """
     parallel_node = ParallelNode(lineno)

@@ -35,7 +35,6 @@ def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, 
     to the given intermediate_rep.
     Modifies intermediate_rep in place.
     """
-    # TODO: This is the main batch of work that needs to get done to make this compliant with the OpenACC standard
     if directive  == "parallel":
         parallel.parallel(clause_list, intermediate_rep, lineno, dbg, *args, **kwargs)
     elif directive == "kernels":

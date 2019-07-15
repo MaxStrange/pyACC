@@ -76,7 +76,7 @@ def acc():
             # Initialize the OpenACC internal control variables if not already initialized
             _construct_icvs()
             if back is None:
-                load_back_end()
+                load_back_end(back_end=icvs.current_device_type)
             try:
                 getattr(back, "compile")
             except AttributeError:
@@ -120,14 +120,18 @@ def acc():
         return wrapper
     return decorate
 
-def load_back_end(back_end="default"):
+def load_back_end(back_end="host"):
     """
     Call this function and pass in a module name as a string.
     This will load the given back end. If "default" is passed in,
     it will use the default back end.
     """
-    if back_end == "default":
-        back_end = "acc.backend.backend"
+    if back_end.lower() == "host":
+        back_end = "acc.backend.host"
+    elif back_end.lower() == "nvidia":
+        back_end = "acc.backend.cuda"
+    elif back_end.lower() == "radeon":
+        back_end = "acc.backend.opencl"
 
     # Set the back end to whatever is the last item in a string of x.y.z...
     global back
@@ -161,8 +165,8 @@ def set_device_type(devtype: str) -> None:
     - If some compute regions are compiled to only use one device type, calling this routine with a
       different device type may produce undefined behavior.
     """
-    # TODO: Determine how to make this work on a per-thread basis. Ditto for the other gets and sets.
     icvs.current_device_type = devtype
+    load_back_end(icvs.current_device_type)
 
 @_initialize_acc()
 def get_device_type() -> str:

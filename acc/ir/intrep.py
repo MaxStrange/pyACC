@@ -34,6 +34,9 @@ class AccNode(IrNode):
     def __init__(self, lineno):
         super().__init__(lineno)
 
+    def __str__(self):
+        return "AccNode (Root)"
+
 class IntermediateRepresentation:
     """
     This class contains everything that the backend should need to rewrite
@@ -50,11 +53,21 @@ class IntermediateRepresentation:
     def __init__(self, meta_data, icvs):
         """
         """
-        self.meta_data = meta_data          # All the meta data
-        self.internal_control_vars = icvs   # All the ICVs for the back-end
-        self.src = meta_data.src            # Shortcut to the source code
-        self.root = AccNode(0)              # The root of the tree
-        self._lineno_lookup = {}            # A hash table for line number -> IrNode
+        self.meta_data = meta_data                          # All the meta data
+        self.internal_control_vars = icvs                   # All the ICVs for the back-end
+        self.src = meta_data.src                            # Shortcut to the source code
+        self.root = AccNode(0)                              # The root of the tree
+        self._lineno_lookup = {}                            # A hash table for line number -> IrNode
+        self.dependency_graph = self._construct_dgraph()    # A DAG for dependency relationships
+
+    def __repr__(self):
+        s = ""
+        for node in self.breadth_first_traversal():
+            s += str(node) + "\n"
+        return s
+
+    def __str__(self):
+        return repr(self)
 
     def add_child(self, child):
         """
@@ -70,6 +83,21 @@ class IntermediateRepresentation:
 
         parent = self._get_parent(child)
         parent.add_child(child)
+
+    def breadth_first_traversal(self):
+        """
+        Yields the nodes in the IR one at a time, in breadth first order.
+        """
+        children = self.root.children
+        childqueue = []
+        while children:
+            for child in children:
+                yield child
+                childqueue.append(child)
+            if childqueue:
+                children = childqueue.pop(0).children
+            else:
+                children = []
 
     def get_ancestors(self, node: IrNode) -> [IrNode]:
         """
@@ -90,6 +118,15 @@ class IntermediateRepresentation:
         ancestors.append(self.root)
         return ancestors
 
+    def _construct_dgraph(self):
+        """
+        Constructs a directed acyclic graph (DAG) for showing
+        dependencies between all the variables in the decorated function's
+        source code.
+        """
+        # TODO
+        return None
+
     def _get_parent(self, child: IrNode) -> IrNode:
         """
         Finds the parent of the given child. The last resort parent is the
@@ -101,6 +138,10 @@ class IntermediateRepresentation:
         line_numbers = [i for i in range(0, child.lineno)]
         line_numbers.reverse()
 
+        # TODO: Determine the best way to specify 'code blocks' in Python
+        #       In C/C++, you can use curly braces to show the scope of the construct,
+        #       but in Python, that's not really an option. Probably best to do
+        #       a special comment to close the construct region.
         # Walk up from here, looking for pragmas
         regexp = re.compile(r"^((\s)*#(\s)*(pragma)(\s)*(acc))")
         for lineno, line in zip(line_numbers, src_lines_above_child):
@@ -129,7 +170,15 @@ class IntermediateRepresentation:
         """
         Returns True if the given child node should be contained in the pragma
         found in the source code at lineno. Returns False otherwise.
+
+        According to my reading of the spec, only kernels, serial, and parallel
+        constructs can encompass other nodes.
         """
-        # TODO: Only certain types of constructs can actually encompass others
-        #       Do this method
-        return False
+        # Get the directive from the pragma
+        pragma = self.src.splitlines()[lineno]
+        directive_and_clauses = pragma.partition("acc")[-1].split(' ')
+        directive_and_clauses = [word for word in directive_and_clauses if word != '']
+        directive = directive_and_clauses[0]
+
+        # Determine if we are contained in this pragma
+        return directive in ("parallel", "kernels", "serial")

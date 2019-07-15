@@ -33,6 +33,21 @@ class LoopNode(intrep.IrNode):
         self.private = None
         self.reduction = None
 
+    def __str__(self):
+        s  = "Loop:\n"
+        s += "  collapse {}\n".format(self.collapse)
+        s += "  gang {}\n".format(self.gang)
+        s += "  worker {}\n".format(self.worker)
+        s += "  vector {}\n".format(self.vector)
+        s += "  seq {}\n".format(self.seq)
+        s += "  auto {}\n".format(self.auto)
+        s += "  tile {}\n".format(self.tile)
+        s += "  device_type {}\n".format(self.device_type)
+        s += "  independent {}\n".format(self.independent)
+        s += "  private {}\n".format(self.private)
+        s += "  reduction {}\n".format(self.reduction)
+        return s
+
 def loop(clauses, intermediate_rep, lineno, dbg, *args, **kwargs):
     """
     From the OpenACC 2.7 standard:
@@ -182,8 +197,6 @@ def _collapse(index, clause_list, intermediate_rep, loop_node, dbg, hybrid):
     # Annotate the loop node with the collapse clause's information
     loop_node.collapse = collapse.CollapseClause(v, n, dbg)
 
-    print("COLLAPSE:", len(loop_node.collapse.loops))
-
     new_index = index + 1 if index + 1 < len(clause_list) else -1
     return new_index
 
@@ -259,7 +272,6 @@ def _worker(index, clause_list, intermediate_rep, loop_node, dbg, hybrid):
 
     loop_node.worker = worker.WorkerClause(num_workers)
 
-    print("WORKER:", num_workers)
     new_index = index + 1 if index + 1 < len(clause_list) else -1
     return new_index
 
@@ -300,8 +312,6 @@ def _vector(index, clause_list, intermediate_rep, loop_node, dbg, hybrid):
             raise errors.InvalidClauseError(err_msg)
 
     loop_node.vector = vector.VectorClause(veclength)
-
-    print("VECTOR:", veclength)
 
     new_index = index + 1 if index + 1 < len(clause_list) else -1
     return new_index

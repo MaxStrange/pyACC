@@ -41,6 +41,7 @@ class CollapseClause:
 
     Items
     -----
+
     - loops : The list (in order of source from top to bottom) of for-loops to collapse. Type is collapse.Loop.
 
     From the docs
@@ -70,3 +71,6 @@ class CollapseClause:
 
         assert n > 0, "n is {}, but must be > 0".format(n)
         self.loops = list(v.loops)[0:n]
+
+    def __str__(self):
+        return "{}".format(len(self.loops))
