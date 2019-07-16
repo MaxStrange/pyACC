@@ -125,7 +125,6 @@ class IntermediateRepresentation:
         source code.
         """
         # TODO
-        return None
 
     def _get_parent(self, child: IrNode) -> IrNode:
         """

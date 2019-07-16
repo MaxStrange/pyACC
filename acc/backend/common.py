@@ -45,9 +45,39 @@ class CompilerTarget:
         return res
     ```
     """
-    def __init__(self):
+    def __init__(self, intermediate_rep):
         """
         """
         self.importsection = ""             # Source code for the import section
         self.kernel_code_sections = []      # One source string per kernel
         self.decorated_function_code = ""   # Source code for the refactored function
+        self._modules = set()               # Set of modules the new code will import
+
+        # Add the import statements for the needed modules
+        for mod in intermediate_rep.meta_data.funcs_mods:
+            self.add_import(mod)
+
+    def add_import(self, module):
+        """
+        Utility function for adding an import statement.
+
+        Adds `import module` to the import section of the source code, where `module`
+        is the given module. Does not add it if this module is already in the import section.
+        """
+        if module not in self._modules:
+            self.importsection += "import {}\n".format(module)
+
+    def build(self):
+        """
+        Builds and returns the resultant source code.
+        """
+        return "{imports}\n\n{kernels}\n{decorated_function}".format(imports=self.importsection, kernels=self._build_kernels_section(), decorated_function=self.decorated_function_code)
+
+    def _build_kernels_section(self):
+        """
+        Builds and returns a string representation of the kernels.
+        """
+        s = ""
+        for kernel in self.kernel_code_sections:
+            s += kernel + "\n\n"
+        return s

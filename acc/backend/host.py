@@ -9,15 +9,17 @@ module and run in place of the @acc-decorated function.
 """
 import acc.frontend.loop.loop as loop
 import acc.frontend.parallel.parallel as parallel
+import acc.backend.common as common
 import os
 
 def compile(intermediate_rep):
     """
     """
-    modified_src = intermediate_rep.src
+    modified_src = common.CompilerTarget(intermediate_rep)
     for node in intermediate_rep.breadth_first_traversal():
-        modified_src = _apply_node(modified_src, node, intermediate_rep)
-    return modified_src
+        # Updates modified_src in place
+        _apply_node(modified_src, node, intermediate_rep)
+    return modified_src.build()
 
 def _apply_node(modified_src, node, intermediate_rep):
     """
