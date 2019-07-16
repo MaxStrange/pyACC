@@ -83,7 +83,8 @@ def acc():
                 raise ImportError("Back end does not have a 'compile' function.")
 
             # Grab the source code from the decorated function
-            source = dill.source.getsource(func)
+            source = dill.source.getsource(func).splitlines()[1:]  # strip the decorator
+            source = os.linesep.join(source)
 
             # Grab the decorated function's signature
             signature = inspect.signature(func)
@@ -91,10 +92,13 @@ def acc():
             # Grab the top of the stack
             stackframe = inspect.stack()[1]
 
+            # Grab the decorated function's modules
+            module = sys.modules[func.__module__]
+            mods_mods = util.get_modules_from_module(module)
+
             # Put together all the stuff we need in order to rewrite the function
             funcname = func.__name__
-            module = sys.modules[func.__module__]
-            meta_data = metavars.MetaVars(src=source, stackframe=stackframe, signature=signature, funcs_name=funcname, funcs_module=module)
+            meta_data = metavars.MetaVars(src=source, stackframe=stackframe, signature=signature, funcs_name=funcname, funcs_module=module, funcs_mods=mods_mods)
 
             intermediate_rep = intrep.IntermediateRepresentation(meta_data, icvs)
             dbg = errors.Debug(intermediate_rep)
@@ -108,7 +112,10 @@ def acc():
 
             # Dump the source code that we created into a file
             oldmodulesource = dill.source.getsource(module)
-            newmodulesource = oldmodulesource.replace(source, new_source.strip("@acc()"))
+            signature_line = "def {}{}:".format(func.__name__, signature)
+            signature_line_number = oldmodulesource.splitlines().index(signature_line) - 1 # deal with decorator
+            last_line_number = len(source.splitlines()) + signature_line_number + 1
+            newmodulesource = _replace_source(oldmodulesource, new_source, signature_line_number, last_line_number)
             fpath = util.compile_kernel_module(newmodulesource)
 
             # Import the new module.
@@ -789,3 +796,12 @@ def _construct_icvs():
         default_async = DEFAULT_ASYNC
 
         icvs = icv.ICVs(current_device_type, current_device_num, default_async)
+
+def _replace_source(oldsrc, newsrc, startlineno, endlineno):
+    """
+    Removes lines from oldsrc starting at startlineno and going through endlineno,
+    then puts newsrc in that location instead and returns the result.
+    """
+    lines = oldsrc.splitlines()
+    lines[startlineno:endlineno] = newsrc.splitlines()
+    return os.linesep.join(lines)

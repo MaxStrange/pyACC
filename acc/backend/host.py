@@ -19,6 +19,9 @@ def compile(intermediate_rep):
     for node in intermediate_rep.breadth_first_traversal():
         # Updates modified_src in place
         _apply_node(modified_src, node, intermediate_rep)
+
+    # TODO: Remove this?
+    modified_src.decorated_function_code = intermediate_rep.src
     return modified_src.build()
 
 def _apply_node(modified_src, node, intermediate_rep):

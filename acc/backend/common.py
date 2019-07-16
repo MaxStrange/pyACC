@@ -51,13 +51,9 @@ class CompilerTarget:
         self.importsection = ""             # Source code for the import section
         self.kernel_code_sections = []      # One source string per kernel
         self.decorated_function_code = ""   # Source code for the refactored function
-        self._modules = set()               # Set of modules the new code will import
+        self._modules = set([mod.__name__ for _alias, mod in intermediate_rep.meta_data.funcs_mods])
 
-        # Add the import statements for the needed modules
-        for mod in intermediate_rep.meta_data.funcs_mods:
-            self.add_import(mod)
-
-    def add_import(self, module):
+    def add_import(self, module, alias=None):
         """
         Utility function for adding an import statement.
 
@@ -65,7 +61,11 @@ class CompilerTarget:
         is the given module. Does not add it if this module is already in the import section.
         """
         if module not in self._modules:
-            self.importsection += "import {}\n".format(module)
+            if alias != module:
+                self.importsection += "import {} as {}\n".format(module, alias)
+            else:
+                self.importsection += "import {}\n".format(module)
+            self._modules.add(module)
 
     def build(self):
         """

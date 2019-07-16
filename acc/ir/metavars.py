@@ -32,8 +32,8 @@ class MetaVars:
                                 acc-decorated-function
 
         @param funcs_mods:      The modules (and aliases of those modules)
-                                which are known to the function and which are
-                                used by the function
+                                which are known to the function (in the form
+                                [(alias: str, module object), etc.])
 
         @param funcs_funcs:     The source code for the functions that
                                 the acc-decorated-function has access to and
