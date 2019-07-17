@@ -192,7 +192,7 @@ def _apply_clause(index, clause_list, intermediate_rep, parallel_node, dbg):
     else:
         return commonclauses.apply_clause(*args)
 
-def _loop(index, clause_list, intermediate_rep, parallel_node, dbg):
+def _loop(index: int, clause_list: [str], intermediate_rep: intrep.IntermediateRepresentation, parallel_node: ParallelNode, dbg):
     """
     A parallel construct can be combined with a loop construct by
     the following:
@@ -207,7 +207,8 @@ def _loop(index, clause_list, intermediate_rep, parallel_node, dbg):
     Once we return from this function, the parallel node will get
     added to the IR tree, along with its child.
     """
-    loop_node = loop.LoopNode(parallel_node.lineno)
+    src = intermediate_rep.get_source_region(parallel_node.lineno)
+    loop_node = loop.LoopNode(parallel_node.lineno, src)
 
     index = index + 1 if index + 1 < len(clause_list) else -1
     if index == -1:

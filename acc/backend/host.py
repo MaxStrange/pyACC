@@ -11,6 +11,8 @@ import acc.frontend.loop.loop as loop
 import acc.frontend.parallel.parallel as parallel
 import acc.backend.common as common
 import os
+import random
+import string
 # Just needed for type hints
 import acc.ir.intrep as intrep
 
@@ -73,6 +75,8 @@ def _apply_parallel_node(modified_src: common.CompilerTarget, node: intrep.IrNod
     modified_src.add_import("multiprocessing")
 
     ## Move the node's source code into a kernel function
+    signature = _create_signature(intermediate_rep, ["ls, sqrs"])  # TODO: Determine necessary parameters
+    kernelsrc = signature + os.linesep + node.src
     modified_src.add_kernel(kernelsrc)
 
     ## Place process creation, data movement, process destruction in the old location
@@ -82,3 +86,22 @@ def _apply_loop_node(modified_src: common.CompilerTarget, node: intrep.IrNode, i
     """
     """
     pass
+
+def _create_signature(intermediate_rep: intrep.IntermediateRepresentation, params: [str]) -> str:
+    """
+    Creates a statistically unique signature of the form `def name_mangled_kernel(args):`
+    and returns it.
+
+    By 'statistically unique', I mean that the name of the function will be generated randomly,
+    but over such a large space of possible values, that there is a virtual guarantee of
+    uniqueness. I am too lazy right now to do this better.
+    """
+    # Create name
+    letters = string.ascii_letters
+    unique = "".join(random.choices(letters, k=15))
+
+    # Put together parameter list
+    args = ",".join(params)
+    args = "({})".format(args)
+
+    return "def {}_kernel_function{}:".format(unique, args)

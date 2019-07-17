@@ -19,8 +19,8 @@ class LoopNode(intrep.IrNode):
     """
     Node for the IntermediateRepresentation tree that is used for loop constructs.
     """
-    def __init__(self, lineno: int):
-        super().__init__(lineno)
+    def __init__(self, lineno: int, src: str):
+        super().__init__(lineno, src)
         self.collapse = None        # clauses.collapse.CollapseClause
         self.gang = None
         self.worker = None          # clauses.worker.WorkerClause
@@ -48,7 +48,7 @@ class LoopNode(intrep.IrNode):
         s += "  reduction {}\n".format(self.reduction)
         return s
 
-def loop(clauses, intermediate_rep, lineno, dbg, *args, **kwargs):
+def loop(clauses: [str], intermediate_rep: intrep.IntermediateRepresentation, lineno: int, dbg, *args, **kwargs):
     """
     From the OpenACC 2.7 standard:
 
@@ -108,7 +108,8 @@ def loop(clauses, intermediate_rep, lineno, dbg, *args, **kwargs):
     - A loop associated with a loop construct that does not have a seq clause must be written
       such that the loop iteration count is computable when entering the loop construct.
     """
-    loop_node = LoopNode(lineno)
+    src = intermediate_rep.get_source_region(lineno)
+    loop_node = LoopNode(lineno, src)
     index = 0
     while index != -1:
         index = apply_clause(index, clauses, intermediate_rep, loop_node, dbg)

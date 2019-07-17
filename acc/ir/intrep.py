@@ -8,6 +8,8 @@ frontend as an argument).
 """
 import acc.frontend.util.util as util
 import acc.frontend.util.errors as errors
+import acc.ir.metavars as metavars
+import acc.ir.icv as icv
 import os
 import re
 
@@ -32,7 +34,7 @@ class IrNode:
             self.children = children
 
         self.lineno = lineno
-        self.src = None
+        self.src = src
 
     def add_child(self, child):
         """
@@ -65,7 +67,7 @@ class IntermediateRepresentation:
 
     # TODO: Give an example
     """
-    def __init__(self, meta_data, icvs):
+    def __init__(self, meta_data: metavars.MetaVars, icvs: icv.ICVs):
         """
         """
         self.meta_data = meta_data                          # All the meta data
