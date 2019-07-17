@@ -7,9 +7,11 @@ import asttokens
 class ParallelNode(intrep.IrNode):
     """
     Node for the IntermediateRepresentation tree that is used for parallel constructs.
+
+    The src string should be the source code that this node applies to.
     """
-    def __init__(self, lineno: int):
-        super().__init__(lineno)
+    def __init__(self, lineno: int, src: str):
+        super().__init__(lineno, src)
         self.async_ = None
         self.wait = None
         self.num_gangs = None
@@ -139,7 +141,8 @@ def parallel(clauses, intermediate_rep, lineno, dbg, *args, **kwargs):
 
     The device_type clause is described in Section 2.4 Device-Specific Clauses.
     """
-    parallel_node = ParallelNode(lineno)
+    src = intermediate_rep.get_source_region(lineno)
+    parallel_node = ParallelNode(lineno, src)
     index = 0
     while index != -1:
         index = _apply_clause(index, clauses, intermediate_rep, parallel_node, dbg)

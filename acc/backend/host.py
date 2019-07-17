@@ -11,34 +11,34 @@ import acc.frontend.loop.loop as loop
 import acc.frontend.parallel.parallel as parallel
 import acc.backend.common as common
 import os
+# Just needed for type hints
+import acc.ir.intrep as intrep
 
-def compile(intermediate_rep):
+def compile(intermediate_rep: intrep.IntermediateRepresentation) -> str:
     """
+    Compiles the given intermediate representation into a source code string
+    ready to be built into a Python module and imported.
     """
     modified_src = common.CompilerTarget(intermediate_rep)
     for node in intermediate_rep.breadth_first_traversal():
         # Updates modified_src in place
         _apply_node(modified_src, node, intermediate_rep)
-
-    # TODO: Remove this?
-    modified_src.decorated_function_code = intermediate_rep.src
     return modified_src.build()
 
-def _apply_node(modified_src, node, intermediate_rep):
+def _apply_node(modified_src: common.CompilerTarget, node: intrep.IrNode, intermediate_rep: intrep.IntermediateRepresentation):
     """
     """
     args = (modified_src, node, intermediate_rep)
 
     if   type(node) == parallel.ParallelNode:
-        modified_src = _apply_parallel_node(*args)
+        _apply_parallel_node(*args)
     elif type(node) == loop.LoopNode:
-        modified_src = _apply_loop_node(*args)
+        _apply_loop_node(*args)
     else:
         # TODO
         raise NotImplementedError("Please implement this type of node in the back end.")
-    return modified_src
 
-def _apply_parallel_node(modified_src, node, intermediate_rep):
+def _apply_parallel_node(modified_src: common.CompilerTarget, node: intrep.IrNode, intermediate_rep: intrep.IntermediateRepresentation):
     """
     Parallel
     --------
@@ -68,12 +68,18 @@ def _apply_parallel_node(modified_src, node, intermediate_rep):
     for the construct or any enclosing data construct will be treated as if it appeared in a firstprivate clause.
     """
     # Modify the source to launch n gangs (gangs = parallel processes in host back end)
-    ## Import the appropriate multiprocessing stuff into the new module if not already there
-    ## Move the node's source code from its current location to after the imports and have it be a kernel function
-    ## Place process creation, data movement, process destruction in the old location
-    return modified_src
 
-def _apply_loop_node(modified_src, node, intermediate_rep):
+    ## Import the appropriate multiprocessing stuff into the new module if not already there
+    modified_src.add_import("multiprocessing")
+
+    ## Move the node's source code into a kernel function
+    kernelsrc =
+    modified_src.add_kernel(kernelsrc)
+
+    ## Place process creation, data movement, process destruction in the old location
+    pass
+
+def _apply_loop_node(modified_src: common.CompilerTarget, node: intrep.IrNode, intermediate_rep: intrep.IntermediateRepresentation):
     """
     """
-    return modified_src
+    pass

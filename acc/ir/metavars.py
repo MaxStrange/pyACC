@@ -15,7 +15,9 @@ class MetaVars:
                     funcs_mods=None, funcs_funcs=None, funcs_name=None,
                     funcs_module=None):
         """
-        @param src:             The source code of the acc-decorated-function
+        @param src:             The source code of the acc-decorated-function,
+                                including the `def whatever(args):` line, but NOT
+                                including the acc decorator.
 
         @param stackframe:      The callstack frame at the point of calling
                                 the acc-decorated-function

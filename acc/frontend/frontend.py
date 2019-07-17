@@ -6,6 +6,7 @@ frontend by the acc module.
 """
 import acc.frontend.loop.loop as loop
 import acc.frontend.parallel.parallel as parallel
+import acc.frontend.util.util as util
 import asttokens
 import re
 
@@ -23,10 +24,7 @@ def accumulate_pragma(intermediate_rep, pragma, lineno, *args, **kwargs):
     """
     Modifies `intermediate_rep` according to `pragma`.
     """
-    directive_and_clauses = pragma.partition("acc")[-1].split(' ')
-    directive_and_clauses = [word for word in directive_and_clauses if word != '']
-    directive = directive_and_clauses[0]
-    clause_list = directive_and_clauses[1:]
+    directive, clause_list = util.parse_pragma_to_directive_and_clauses(pragma)
     _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, *args, **kwargs)
 
 def _accumulate_pragma_helper(directive, clause_list, intermediate_rep, lineno, dbg, *args, **kwargs):

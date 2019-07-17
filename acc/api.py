@@ -118,6 +118,11 @@ def acc():
             newmodulesource = _replace_source(oldmodulesource, new_source, signature_line_number, last_line_number)
             fpath = util.compile_kernel_module(newmodulesource)
 
+            # TODO: Remove this
+            print(newmodulesource)
+            with open("debug_output.py", 'wb') as f:
+                f.write(newmodulesource.encode())
+
             # Import the new module.
             mod = util.load_kernel_module(fpath)
 

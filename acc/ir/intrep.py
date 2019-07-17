@@ -6,6 +6,7 @@ frontend. The frontend, meanwhile, should include this file and be agnostic
 about which particular backend it is using (the backend is passed into the
 frontend as an argument).
 """
+import acc.frontend.util.util as util
 import re
 
 class IrNode:
@@ -13,13 +14,23 @@ class IrNode:
     IntermediateRepresentation tree node. Base class for all types
     of Nodes.
     """
-    def __init__(self, lineno, children=None):
+    def __init__(self, lineno: int, src: str, children=None):
+        """
+        An IrNode is a node in the IntermediateRepresentation tree.
+        Each IrNode type contains all the specifics of their clauses,
+        but all IrNodes contain the following items:
+
+        - lineno: The line number (function-based - i.e., starting at 0 at the
+                  function declaration) of the pragma that was found.
+        - src:    The source code that the node encompasses, if it encompasses any.
+        """
         if children is None:
             self.children = []
         else:
             self.children = children
 
         self.lineno = lineno
+        self.src = None
 
     def add_child(self, child):
         """
@@ -30,9 +41,11 @@ class IrNode:
 class AccNode(IrNode):
     """
     The root of an IntermediateRepresentation tree.
+    The line number of this node should be zero, and the
+    src should be the function's source.
     """
-    def __init__(self, lineno):
-        super().__init__(lineno)
+    def __init__(self, lineno: int, src: str):
+        super().__init__(lineno, src)
 
     def __str__(self):
         return "AccNode (Root)"
@@ -56,7 +69,7 @@ class IntermediateRepresentation:
         self.meta_data = meta_data                          # All the meta data
         self.internal_control_vars = icvs                   # All the ICVs for the back-end
         self.src = meta_data.src                            # Shortcut to the source code
-        self.root = AccNode(0)                              # The root of the tree
+        self.root = AccNode(0, self.src)                    # The root of the tree
         self._lineno_lookup = {}                            # A hash table for line number -> IrNode
         self.dependency_graph = self._construct_dgraph()    # A DAG for dependency relationships
 
@@ -118,6 +131,97 @@ class IntermediateRepresentation:
         ancestors.append(self.root)
         return ancestors
 
+    def get_source_region(self, lineno: int) -> str:
+        """
+        Given a line number containing a pragma, return the source string that the
+        directive in that pragma encapsulates. For example,
+
+        ```python
+        # pragma acc parallel loop collapse(2)
+        for i in range(5):
+            for j in range(6):
+                for k in range(7):
+                    foo()
+        ```
+
+        would result in
+
+        ```python
+        for i in range(5):
+            for j in range(6):
+                for k in range(7):
+                    foo()
+        ```
+
+        In this example, even though the parallel loop construct has a collapse of 2,
+        the entire loop is necessary for the back end to determine what to do,
+        and therefore the source region is the entire loop.
+
+        For constructs that are normally denoted in C/C++ via opening and closing braces,
+        in Python, we require that the scope be denoted with a commented brace:
+
+        ```python
+        # pragma acc kernels
+        #{
+            foo()
+            bar()
+            baz()
+        #}
+        ```
+
+        If the pragma is one that does not encapsulate source code, None is returned.
+        """
+        pragma = self._get_src_line_by_lineno(lineno)
+        directive, clause_list = util.parse_pragma_to_directive_and_clauses(pragma)
+
+        # Check for loop hybrid
+        if directive == "parallel" and clause_list[0] == "loop":
+            directive = "parallel loop"
+        elif directive == "kernels" and clause_list[0] == "loop":
+            directive = "kernels loop"
+
+        # Now determine region based on directive
+        if directive   == "parallel":
+            return self._get_region_from_scope_or_braces(lineno)
+        elif directive == "kernels":
+            pass
+        elif directive == "parallel loop":
+            pass
+        elif directive == "kernels loop":
+            pass
+        elif directive == "serial":
+            pass
+        elif directive == "data":
+            pass
+        elif directive == "enter":  # enter data
+            pass
+        elif directive == "exit":   # exit data
+            pass
+        elif directive == "host_data":
+            pass
+        elif directive == "loop":
+            pass
+        elif directive == "cache":
+            pass
+        elif directive == "atomic":
+            pass
+        elif directive == "declare":
+            pass
+        elif directive == "init":
+            pass
+        elif directive == "shutdown":
+            pass
+        elif directive == "set":
+            pass
+        elif directive == "update":
+            pass
+        elif directive == "wait":
+            pass
+        elif directive == "routine":
+            pass
+        else:
+            raise ValueError("Unrecognized construct or directive:", directive)
+
     def _construct_dgraph(self):
         """
         Constructs a directed acyclic graph (DAG) for showing
@@ -125,6 +229,7 @@ class IntermediateRepresentation:
         source code.
         """
         # TODO
+        return []
 
     def _get_parent(self, child: IrNode) -> IrNode:
         """
@@ -164,6 +269,41 @@ class IntermediateRepresentation:
             return self._lineno_lookup[lineno]
         else:
             return None
+
+    def _get_region_from_scope_or_braces(self, lineno: int) -> str:
+        """
+        If the line after lineno is a commented open-brace ('#{'),
+        the region spanned by the open and close braces will be returned. This will
+        not include the braces themselves.
+
+        If the line after lineno is not a commented open-brace, this method
+        will return the block of code as inferred by Python's whitespace rules,
+        so a for loop, for example:
+
+        ```python
+        for i in range(7):
+            foo()
+            bar()
+            for j in range(9):
+                baz()
+        print("hello world")
+        ```
+
+        would be returned with the `print("hello world")` removed, since it is not
+        part of the for loop's block.
+        """
+        nextline = self._get_src_line_by_lineno(lineno + 1)
+        regex = re.compile(r"(\s)*#(\s)*{.*")
+        if regex.match(nextline):
+            return self._get_region_from_braces(self, lineno)
+        else:
+            return self._get_region_from_scope(self, lineno)
+
+    def _get_src_line_by_lineno(self, lineno: int) -> str:
+        """
+        Returns the source code at the given function-oriented line number.
+        """
+        return self.src.splitlines()[lineno]
 
     def _pragma_encompasses_child(self, child: IrNode, lineno: int) -> bool:
         """

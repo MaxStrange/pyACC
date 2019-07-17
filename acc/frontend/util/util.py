@@ -181,6 +181,20 @@ def parse_clause_with_parens(clausename, clause, dbg):
 
     return ret
 
+def parse_pragma_to_directive_and_clauses(pragma: str) -> (str, [str]):
+    """
+    Parses `pragma` (a line of the form `# pragma acc directive clause list`)
+    into "directive" and ["clause", "list"].
+    """
+    regexp = re.compile(r"^((\s)*#(\s)*(pragma)(\s)*(acc))")
+    assert regexp.match(pragma), "Given pragma ({}) does not make sense for parsing into directives and clauses.".format(pragma)
+
+    directive_and_clauses = pragma.partition("acc")[-1].split(' ')
+    directive_and_clauses = [word for word in directive_and_clauses if word != '']
+    directive = directive_and_clauses[0]
+    clause_list = directive_and_clauses[1:]
+    return directive, clause_list
+
 def _num_spaces(line):
     """
     How many spaces are there on the left of this line?

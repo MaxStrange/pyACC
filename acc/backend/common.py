@@ -53,7 +53,7 @@ class CompilerTarget:
         self.decorated_function_code = ""   # Source code for the refactored function
         self._modules = set([mod.__name__ for _alias, mod in intermediate_rep.meta_data.funcs_mods])
 
-    def add_import(self, module, alias=None):
+    def add_import(self, module: str, alias=None):
         """
         Utility function for adding an import statement.
 
@@ -61,11 +61,17 @@ class CompilerTarget:
         is the given module. Does not add it if this module is already in the import section.
         """
         if module not in self._modules:
-            if alias != module:
+            if alias and alias != module:
                 self.importsection += "import {} as {}\n".format(module, alias)
             else:
                 self.importsection += "import {}\n".format(module)
             self._modules.add(module)
+
+    def add_kernel(self, kernelsrc: str):
+        """
+        Adds the given `kernelsrc` into the list of kernels to compile.
+        """
+        self.kernel_code_sections.append(kernelsrc)
 
     def build(self):
         """
