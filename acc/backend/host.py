@@ -73,7 +73,6 @@ def _apply_parallel_node(modified_src: common.CompilerTarget, node: intrep.IrNod
     modified_src.add_import("multiprocessing")
 
     ## Move the node's source code into a kernel function
-    kernelsrc =
     modified_src.add_kernel(kernelsrc)
 
     ## Place process creation, data movement, process destruction in the old location

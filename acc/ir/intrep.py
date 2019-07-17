@@ -7,6 +7,8 @@ about which particular backend it is using (the backend is passed into the
 frontend as an argument).
 """
 import acc.frontend.util.util as util
+import acc.frontend.util.errors as errors
+import os
 import re
 
 class IrNode:
@@ -184,41 +186,41 @@ class IntermediateRepresentation:
         if directive   == "parallel":
             return self._get_region_from_scope_or_braces(lineno)
         elif directive == "kernels":
-            pass
+            return self._get_region_from_scope_or_braces(lineno)
         elif directive == "parallel loop":
-            pass
+            return self._get_region_from_scope(lineno)
         elif directive == "kernels loop":
-            pass
+            return self._get_region_from_scope(lineno)
         elif directive == "serial":
-            pass
+            return self._get_region_from_scope_or_braces(lineno)
         elif directive == "data":
-            pass
+            return self._get_region_from_scope_or_braces(lineno)
         elif directive == "enter":  # enter data
-            pass
+            return None
         elif directive == "exit":   # exit data
-            pass
+            return None
         elif directive == "host_data":
-            pass
+            return self._get_region_from_scope_or_braces(lineno)
         elif directive == "loop":
-            pass
+            return self._get_region_from_scope(lineno)
         elif directive == "cache":
-            pass
+            return None
         elif directive == "atomic":
-            pass
+            return self._get_src_line_by_lineno(lineno + 1)
         elif directive == "declare":
-            pass
+            return None
         elif directive == "init":
-            pass
+            return None
         elif directive == "shutdown":
-            pass
+            return None
         elif directive == "set":
-            pass
+            return None
         elif directive == "update":
-            pass
+            return None
         elif directive == "wait":
-            pass
+            return None
         elif directive == "routine":
-            pass
+            return self._get_region_from_scope(lineno)
         else:
             raise ValueError("Unrecognized construct or directive:", directive)
 
@@ -295,9 +297,71 @@ class IntermediateRepresentation:
         nextline = self._get_src_line_by_lineno(lineno + 1)
         regex = re.compile(r"(\s)*#(\s)*{.*")
         if regex.match(nextline):
-            return self._get_region_from_braces(self, lineno)
+            return self._get_region_from_braces(lineno)
         else:
-            return self._get_region_from_scope(self, lineno)
+            return self._get_region_from_scope(lineno)
+
+    def _get_region_from_braces(self, lineno: int) -> str:
+        """
+        Gets the region of source code starting from lineno + 1 which is enclosed
+        by commented braces. Lineno + 1 must be an open brace.
+        """
+        regex_open = re.compile(r"(\s)*#(\s)*{.*")
+        regex_close = re.compile(r"(\s)*#(\s)*}.*")
+
+        # Sanity check the input
+        openbrace = self._get_src_line_by_lineno(lineno + 1)
+        assert regex_open.match(openbrace), "Line {} should be an open brace but is '{}'.".format(lineno + 1, openbrace)
+
+        # Now walk through the lines starting at lineno + 1, adding the lines
+        # that are not a brace to the region_lines, and stopping once we reach the ending brace
+        possible_lines = self.src.splitlines()[lineno + 1 : ]
+        region_lines = []
+
+        # Because it is possible that we have multiple regions of brace-enclosed source,
+        # we must keep track of any open-braces we see, and only return once we have seen
+        # the right close-brace
+        nopens = 0
+        for line in possible_lines:
+            if regex_open.match(line):
+                nopens += 1
+            elif regex_close.match(line):
+                nopens -= 1
+
+            if nopens == 0:
+                return os.linesep.join(region_lines)
+            else:
+                region_lines.append(line)
+
+        errorlines = [self._get_src_line_by_lineno(i) for i in (lineno - 1, lineno)]
+        errorlines = os.linesep.join(errorlines)
+        raise SyntaxError("Missing closing brace for open brace at line {} inside of function. Lines around error: {}".format(lineno, errorlines))
+
+    def _get_region_from_scope(self, lineno: int) -> str:
+        """
+        Gets the region of source code starting from lineno + 1 which is governed
+        by Python's whitespace code block rules.
+        """
+        possible_lines = self.src.splitlines()[lineno + 1 : ]
+        region_lines = []
+
+        # TODO: Handle explicit line continuation (\)
+        # Walk the source lines starting at lineno + 1, and once our leading whitespace
+        # gets back to where we started, we are done
+        currentws = -1
+        for number, line in enumerate(possible_lines, start=lineno + 1):
+            if number == lineno + 1:
+                # This is the starting amount of leading whitespace
+                startingws = len(line) - len(line.lstrip(' '))
+            else:
+                currentws = len(line) - len(line.lstrip(' '))
+
+            if currentws == startingws:
+                break
+            else:
+                region_lines.append(line)
+
+        return os.linesep.join(region_lines)
 
     def _get_src_line_by_lineno(self, lineno: int) -> str:
         """
